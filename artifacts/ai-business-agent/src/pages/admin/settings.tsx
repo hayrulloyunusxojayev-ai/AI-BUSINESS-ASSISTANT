@@ -31,7 +31,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Save } from "lucide-react";
 
 const settingsSchema = z.object({
-  businessName: z.string().min(1, "Business name is required").max(100, "Name is too long"),
+  businessName: z.string().min(1, "Biznes nomi kiritilishi shart").max(100, "Nom juda uzun"),
 });
 
 type SettingsFormValues = z.infer<typeof settingsSchema>;
@@ -63,10 +63,10 @@ export default function Settings() {
       {
         onSuccess: (updatedBusiness) => {
           queryClient.setQueryData(getGetMyBusinessQueryKey(), updatedBusiness);
-          toast({ title: "Settings saved" });
+          toast({ title: "Sozlamalar saqlandi" });
         },
         onError: () => {
-          toast({ title: "Error saving settings", variant: "destructive" });
+          toast({ title: "Sozlamalarni saqlashda xato", variant: "destructive" });
         },
       }
     );
@@ -75,9 +75,9 @@ export default function Settings() {
   return (
     <div className="p-6 md:p-10 space-y-8 max-w-4xl mx-auto">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">Settings</h1>
+        <h1 className="text-3xl font-bold tracking-tight">Sozlamalar</h1>
         <p className="text-muted-foreground mt-2">
-          Manage your business profile and preferences.
+          Biznes profilingiz va sozlamalarini boshqaring.
         </p>
       </div>
 
@@ -96,16 +96,16 @@ export default function Settings() {
         <Card className="border-border/50 shadow-sm">
           <CardContent className="p-6">
             <p className="text-center text-muted-foreground">
-              Please complete your business setup on the Dashboard first.
+              Avval boshqaruv panelida biznes sozlamalarini yakunlang.
             </p>
           </CardContent>
         </Card>
       ) : (
         <Card className="border-border/50 shadow-sm">
           <CardHeader>
-            <CardTitle>Business Profile</CardTitle>
+            <CardTitle>Biznes profili</CardTitle>
             <CardDescription>
-              This information is visible to customers in your AI chat interface.
+              Bu ma'lumotlar mijozlarga AI chat interfeysida ko'rinadi.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -116,12 +116,12 @@ export default function Settings() {
                   name="businessName"
                   render={({ field }) => (
                     <FormItem className="max-w-md">
-                      <FormLabel>Business Name</FormLabel>
+                      <FormLabel>Biznes nomi</FormLabel>
                       <FormControl>
-                        <Input placeholder="e.g. Acme Corp" {...field} />
+                        <Input placeholder="masalan: Acme Corp" {...field} />
                       </FormControl>
                       <FormDescription>
-                        Your public-facing brand name.
+                        Ommaga ochiq brend nomingiz.
                       </FormDescription>
                       <FormMessage />
                     </FormItem>
@@ -130,11 +130,11 @@ export default function Settings() {
 
                 <Button type="submit" disabled={updateBusiness.isPending || !form.formState.isDirty}>
                   {updateBusiness.isPending ? (
-                    "Saving..."
+                    "Saqlanmoqda..."
                   ) : (
                     <>
                       <Save className="size-4 mr-2" />
-                      Save Changes
+                      O'zgarishlarni saqlash
                     </>
                   )}
                 </Button>

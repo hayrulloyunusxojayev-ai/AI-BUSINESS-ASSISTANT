@@ -54,10 +54,10 @@ import { useToast } from "@/hooks/use-toast";
 import { Plus, Pencil, Trash2, PackageSearch, Image as ImageIcon } from "lucide-react";
 
 const productSchema = z.object({
-  name: z.string().min(1, "Name is required").max(100, "Name is too long"),
-  price: z.string().min(1, "Price is required").regex(/^\d+(\.\d{1,2})?$/, "Must be a valid price (e.g. 19.99)"),
-  description: z.string().min(1, "Description is required"),
-  image: z.string().url("Must be a valid URL").optional().or(z.literal("")),
+  name: z.string().min(1, "Nom kiritilishi shart").max(100, "Nom juda uzun"),
+  price: z.string().min(1, "Narx kiritilishi shart").regex(/^\d+(\.\d{1,2})?$/, "To'g'ri narx kiriting (masalan: 19.99)"),
+  description: z.string().min(1, "Tavsif kiritilishi shart"),
+  image: z.string().url("To'g'ri URL kiriting").optional().or(z.literal("")),
 });
 
 type ProductFormValues = z.infer<typeof productSchema>;
@@ -69,9 +69,9 @@ export default function Products() {
     <div className="p-6 md:p-10 space-y-8 max-w-6xl mx-auto">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Products</h1>
+          <h1 className="text-3xl font-bold tracking-tight">Mahsulotlar</h1>
           <p className="text-muted-foreground mt-2">
-            Manage the products your AI assistant can sell.
+            AI yordamchingiz sotishi mumkin bo'lgan mahsulotlarni boshqaring.
           </p>
         </div>
         <ProductDialog />
@@ -90,9 +90,9 @@ export default function Products() {
               <PackageSearch className="size-6" />
             </div>
             <div>
-              <h3 className="text-lg font-semibold">No products found</h3>
+              <h3 className="text-lg font-semibold">Mahsulotlar topilmadi</h3>
               <p className="text-muted-foreground mt-1 max-w-md mx-auto">
-                Add your first product to give your AI agent something to talk about with your customers.
+                AI agentingizga mijozlar bilan gaplashish uchun birinchi mahsulotingizni qo'shing.
               </p>
             </div>
             <ProductDialog />
@@ -120,10 +120,10 @@ function ProductCard({ product }: { product: Product }) {
       {
         onSuccess: () => {
           queryClient.invalidateQueries({ queryKey: getListProductsQueryKey() });
-          toast({ title: "Product deleted" });
+          toast({ title: "Mahsulot o'chirildi" });
         },
         onError: () => {
-          toast({ title: "Error deleting product", variant: "destructive" });
+          toast({ title: "Mahsulotni o'chirishda xato", variant: "destructive" });
         },
       }
     );
@@ -137,7 +137,7 @@ function ProductCard({ product }: { product: Product }) {
         ) : (
           <div className="w-full h-full flex flex-col items-center justify-center text-muted-foreground gap-2">
             <ImageIcon className="size-8 opacity-50" />
-            <span className="text-xs font-medium uppercase tracking-widest opacity-50">No Image</span>
+            <span className="text-xs font-medium uppercase tracking-widest opacity-50">Rasm yo'q</span>
           </div>
         )}
       </div>
@@ -168,15 +168,15 @@ function ProductCard({ product }: { product: Product }) {
             </AlertDialogTrigger>
             <AlertDialogContent>
               <AlertDialogHeader>
-                <AlertDialogTitle>Delete Product</AlertDialogTitle>
+                <AlertDialogTitle>Mahsulotni o'chirish</AlertDialogTitle>
                 <AlertDialogDescription>
-                  Are you sure you want to delete "{product.name}"? This action cannot be undone and your AI agent will no longer know about this product.
+                  "{product.name}"ni o'chirishni xohlaysizmi? Bu amalni bekor qilib bo'lmaydi va AI agentingiz bu mahsulot haqida endi bilmaydi.
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
-                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogCancel>Bekor qilish</AlertDialogCancel>
                 <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-                  {deleteProduct.isPending ? "Deleting..." : "Delete"}
+                  {deleteProduct.isPending ? "O'chirilmoqda..." : "O'chirish"}
                 </AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>
@@ -220,11 +220,11 @@ function ProductDialog({ product, trigger }: { product?: Product, trigger?: Reac
         {
           onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: getListProductsQueryKey() });
-            toast({ title: "Product updated" });
+            toast({ title: "Mahsulot yangilandi" });
             setOpen(false);
           },
           onError: () => {
-            toast({ title: "Error updating product", variant: "destructive" });
+            toast({ title: "Mahsulotni yangilashda xato", variant: "destructive" });
           },
         }
       );
@@ -234,12 +234,12 @@ function ProductDialog({ product, trigger }: { product?: Product, trigger?: Reac
         {
           onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: getListProductsQueryKey() });
-            toast({ title: "Product created" });
+            toast({ title: "Mahsulot yaratildi" });
             form.reset();
             setOpen(false);
           },
           onError: () => {
-            toast({ title: "Error creating product", variant: "destructive" });
+            toast({ title: "Mahsulot yaratishda xato", variant: "destructive" });
           },
         }
       );
@@ -255,15 +255,15 @@ function ProductDialog({ product, trigger }: { product?: Product, trigger?: Reac
         {trigger || (
           <Button className="gap-2">
             <Plus className="size-4" />
-            Add Product
+            Mahsulot qo'shish
           </Button>
         )}
       </DialogTrigger>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
-          <DialogTitle>{isEditing ? "Edit Product" : "Add Product"}</DialogTitle>
+          <DialogTitle>{isEditing ? "Mahsulotni tahrirlash" : "Mahsulot qo'shish"}</DialogTitle>
           <DialogDescription>
-            {isEditing ? "Update your product details." : "Add a new product to your catalog."}
+            {isEditing ? "Mahsulot ma'lumotlarini yangilang." : "Katalogingizga yangi mahsulot qo'shing."}
           </DialogDescription>
         </DialogHeader>
 
@@ -274,9 +274,9 @@ function ProductDialog({ product, trigger }: { product?: Product, trigger?: Reac
               name="name"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Name</FormLabel>
+                  <FormLabel>Mahsulot nomi</FormLabel>
                   <FormControl>
-                    <Input placeholder="e.g. Mechanical Keyboard" {...field} />
+                    <Input placeholder="masalan: Mexanik klaviatura" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -288,7 +288,7 @@ function ProductDialog({ product, trigger }: { product?: Product, trigger?: Reac
               name="price"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Price</FormLabel>
+                  <FormLabel>Narxi</FormLabel>
                   <FormControl>
                     <div className="relative">
                       <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">$</span>
@@ -305,10 +305,10 @@ function ProductDialog({ product, trigger }: { product?: Product, trigger?: Reac
               name="description"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Description</FormLabel>
+                  <FormLabel>Mahsulot tavsifi</FormLabel>
                   <FormControl>
                     <Textarea 
-                      placeholder="Describe the product in detail. The AI agent will use this to answer questions." 
+                      placeholder="Mahsulotni batafsil tasvirlang. AI agent mijozlar savollariga javob berish uchun bundan foydalanadi." 
                       className="min-h-[100px] resize-none"
                       {...field} 
                     />
@@ -323,9 +323,9 @@ function ProductDialog({ product, trigger }: { product?: Product, trigger?: Reac
               name="image"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Image URL (Optional)</FormLabel>
+                  <FormLabel>Rasm URL manzili (Ixtiyoriy)</FormLabel>
                   <FormControl>
-                    <Input placeholder="https://example.com/image.jpg" {...field} />
+                    <Input placeholder="https://example.com/rasm.jpg" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -334,10 +334,10 @@ function ProductDialog({ product, trigger }: { product?: Product, trigger?: Reac
 
             <DialogFooter className="pt-4">
               <Button type="button" variant="outline" onClick={() => setOpen(false)}>
-                Cancel
+                Bekor qilish
               </Button>
               <Button type="submit" disabled={isPending}>
-                {isPending ? "Saving..." : isEditing ? "Save Changes" : "Add Product"}
+                {isPending ? "Saqlanmoqda..." : isEditing ? "O'zgarishlarni saqlash" : "Mahsulot qo'shish"}
               </Button>
             </DialogFooter>
           </form>

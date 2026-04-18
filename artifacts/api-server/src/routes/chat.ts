@@ -69,10 +69,10 @@ router.post("/chat/:shareLinkId/messages", async (req, res) => {
     .map((p) => `- ${p.name}: $${p.price} — ${p.description}`)
     .join("\n");
 
-  const systemPrompt = `You are a sales assistant for "${business.businessName}". Only use the provided product list. Your goal is to help the customer choose and buy products. Be friendly and persuasive. Never make up products that aren't on the list.
+  const systemPrompt = `Siz "${business.businessName}" uchun savdo yordamchisisiz. Faqat berilgan mahsulotlar ro'yxatidan foydalaning. Maqsadingiz mijozlarga mahsulotlarni tanlash va sotib olishda yordam berishdir. Do'stona va ishontiruvchan bo'ling. Ro'yxatda bo'lmagan mahsulotlarni ixtiro qilmang. Hech qachon ChatGPT yoki OpenAI deb o'zingizni tanitmang. Har doim o'zbek tilida gapiring.
 
-Available products:
-${productList || "No products available yet."}`;
+Mavjud mahsulotlar:
+${productList || "Hozir mahsulotlar qo'shilmoqda. Siz nimani qidiryapsiz?"}`;
 
   const historyMessages = (bodyParsed.data.history || []).map((m) => ({
     role: m.role as "user" | "assistant",

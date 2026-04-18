@@ -19,7 +19,7 @@ export default function Chat() {
   const { shareLinkId } = useParams();
   
   if (!shareLinkId) {
-    return <ChatError message="Invalid chat link." />;
+    return <ChatError message="Noto'g'ri chat havolasi." />;
   }
 
   return <ChatInterface shareLinkId={shareLinkId} />;
@@ -54,7 +54,6 @@ function ChatInterface({ shareLinkId }: { shareLinkId: string }) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [historyLoaded, setHistoryLoaded] = useState(false);
 
-  // Initialize messages with history
   useEffect(() => {
     if (history && !historyLoaded) {
       setMessages(
@@ -67,7 +66,6 @@ function ChatInterface({ shareLinkId }: { shareLinkId: string }) {
     }
   }, [history, historyLoaded, setMessages]);
 
-  // Scroll to bottom on new messages
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
@@ -84,12 +82,12 @@ function ChatInterface({ shareLinkId }: { shareLinkId: string }) {
   };
 
   if (businessError) {
-    return <ChatError message="This business does not exist or is currently unavailable." />;
+    return <ChatError message="Bu biznes mavjud emas yoki hozir mavjud emas." />;
   }
 
   return (
     <div className="flex flex-col h-screen bg-background text-foreground max-w-4xl mx-auto w-full border-x border-border/40 shadow-sm relative">
-      {/* Header */}
+      {/* Sarlavha */}
       <header className="h-16 shrink-0 border-b border-border/40 flex items-center px-6 bg-card z-10">
         <div className="size-10 rounded-full bg-primary/10 flex items-center justify-center text-primary mr-4 shrink-0">
           <Store className="size-5" />
@@ -108,28 +106,28 @@ function ChatInterface({ shareLinkId }: { shareLinkId: string }) {
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-500 opacity-75"></span>
                   <span className="relative inline-flex rounded-full size-2 bg-green-500"></span>
                 </span>
-                AI Assistant Online
+                AI Yordamchi Onlayn
               </p>
             </>
           )}
         </div>
       </header>
 
-      {/* Messages */}
+      {/* Xabarlar */}
       <div 
         ref={scrollRef}
         className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-6 bg-muted/10 pb-32"
       >
-        {/* Welcome message */}
+        {/* Salomlashuv xabari */}
         {!historyLoading && messages.length === 0 && (
           <div className="flex justify-center my-8">
             <div className="bg-card border border-border/50 text-center p-6 rounded-2xl max-w-sm shadow-sm">
               <div className="size-12 bg-primary/10 rounded-full flex items-center justify-center text-primary mx-auto mb-4">
                 <Store className="size-6" />
               </div>
-              <h3 className="font-medium mb-2">Welcome to {business?.businessName}</h3>
+              <h3 className="font-medium mb-2">{business?.businessName}ga xush kelibsiz</h3>
               <p className="text-sm text-muted-foreground">
-                I'm your AI assistant. I can help you find products, check prices, and answer questions about what we offer.
+                Assalomu alaykum! Sizga qanday yordam bera olaman?
               </p>
             </div>
           </div>
@@ -184,14 +182,14 @@ function ChatInterface({ shareLinkId }: { shareLinkId: string }) {
         )}
       </div>
 
-      {/* Input */}
+      {/* Xabar yozish */}
       <div className="absolute bottom-0 left-0 right-0 bg-background/80 backdrop-blur-md border-t border-border/40 p-4">
         <form 
           onSubmit={handleSubmit}
           className="flex items-end gap-2 max-w-3xl mx-auto relative"
         >
           <Input
-            placeholder="Type your message..."
+            placeholder="Xabaringizni yozing..."
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
             disabled={isChatLoading || businessLoading}
@@ -205,12 +203,12 @@ function ChatInterface({ shareLinkId }: { shareLinkId: string }) {
             className="absolute right-2 bottom-2 rounded-xl size-8 transition-transform active:scale-95"
           >
             <Send className="size-4" />
-            <span className="sr-only">Send</span>
+            <span className="sr-only">Yuborish</span>
           </Button>
         </form>
         <div className="text-center mt-3">
           <p className="text-[10px] text-muted-foreground">
-            AI Assistant may produce inaccurate information.
+            AI Yordamchi noto'g'ri ma'lumot berishi mumkin.
           </p>
         </div>
       </div>
@@ -225,7 +223,7 @@ function ChatError({ message }: { message: string }) {
         <div className="size-16 bg-destructive/10 text-destructive rounded-full flex items-center justify-center mx-auto">
           <AlertCircle className="size-8" />
         </div>
-        <h1 className="text-2xl font-bold tracking-tight">Chat Unavailable</h1>
+        <h1 className="text-2xl font-bold tracking-tight">Chat Mavjud Emas</h1>
         <p className="text-muted-foreground">{message}</p>
       </div>
     </div>

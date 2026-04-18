@@ -12,10 +12,10 @@ export default function Home() {
         </div>
         <nav className="flex items-center gap-6">
           <Link href="/sign-in" className="text-sm font-medium hover:text-primary transition-colors">
-            Sign In
+            Kirish
           </Link>
           <Link href="/sign-up" className="text-sm font-medium bg-primary text-primary-foreground px-5 py-2.5 rounded-full hover:bg-primary/90 transition-all hover-elevate">
-            Get Started
+            Boshlash
           </Link>
         </nav>
       </header>
@@ -27,20 +27,20 @@ export default function Home() {
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
               <span className="relative inline-flex rounded-full size-2 bg-primary"></span>
             </span>
-            Meet your new top performer
+            Yangi yuqori ko'rsatkichli yordamchingizni tanishing
           </div>
           
           <h1 className="text-5xl md:text-7xl font-bold tracking-tighter text-balance">
-            The AI sales assistant that <span className="text-primary">knows your business.</span>
+            Biznesingizni biladigan <span className="text-primary">AI savdo yordamchisi.</span>
           </h1>
           
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto text-balance leading-relaxed">
-            Upload your product catalog and get a dedicated, intelligent concierge ready to answer customer questions and close sales, 24/7.
+            Mahsulotlar katalogingizni yuklang va mijozlar savollariga javob berish va savdolarni yopish uchun 24/7 tayyor aqlli yordamchi oling.
           </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-8">
             <Link href="/sign-up" className="w-full sm:w-auto text-base font-medium bg-primary text-primary-foreground px-8 py-4 rounded-full hover:bg-primary/90 transition-all hover-elevate">
-              Start Building Free
+              Bepul boshlash
             </Link>
           </div>
         </div>
@@ -56,13 +56,13 @@ export default function Home() {
                   <div className="size-3 rounded-full bg-green-400/80" />
                 </div>
                 <div className="ml-4 text-xs font-medium text-muted-foreground px-3 py-1.5 bg-background rounded-md border border-border/50">
-                  chat.zentra.ai/your-business
+                  chat.zentra.ai/biznesingiz
                 </div>
               </div>
               <div className="flex-1 flex flex-col p-6 space-y-6 overflow-hidden">
                 <div className="flex justify-end">
                   <div className="bg-primary text-primary-foreground px-4 py-3 rounded-2xl rounded-tr-sm max-w-[80%] text-sm">
-                    Do you have any mechanical keyboards suitable for an open office?
+                    Ochiq ofis uchun mos mexanik klaviaturalaringiz bormi?
                   </div>
                 </div>
                 <div className="flex gap-4 max-w-[80%]">
@@ -70,7 +70,7 @@ export default function Home() {
                     <div className="size-2 bg-primary rounded-sm" />
                   </div>
                   <div className="bg-muted px-4 py-3 rounded-2xl rounded-tl-sm text-sm text-foreground leading-relaxed">
-                    Yes, I'd recommend the <span className="font-semibold">Keychron K8 Pro</span>. It uses Gateron Red switches which are tactile but silent, making it perfect for an open office environment without disturbing your coworkers. It's currently in stock for $99. Would you like to see the specifications?
+                    Ha, <span className="font-semibold">Keychron K8 Pro</span>ni tavsiya qilaman. U Gateron Red tugmachalaridan foydalanadi — ular sezgir lekin jim, bu esa ochiq ofis muhiti uchun juda mos. Hozir omborda mavjud, narxi $99. Texnik xususiyatlarini ko'rishni xohlaysizmi?
                   </div>
                 </div>
               </div>
@@ -80,7 +80,7 @@ export default function Home() {
       </main>
 
       <footer className="border-t border-border/40 py-12 text-center text-muted-foreground text-sm">
-        <p>© {new Date().getFullYear()} Zentra AI. Built with Replit.</p>
+        <p>© {new Date().getFullYear()} Zentra AI. Replit bilan yaratilgan.</p>
       </footer>
     </div>
   );

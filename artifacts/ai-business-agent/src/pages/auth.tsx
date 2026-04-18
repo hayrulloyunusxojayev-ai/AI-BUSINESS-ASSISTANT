@@ -33,7 +33,7 @@ export function SignInPage() {
       await signIn(email, password);
       setLocation("/admin");
     } catch (error) {
-      toast({ title: "Could not sign in", description: error instanceof Error ? error.message : "Check your email and password.", variant: "destructive" });
+      toast({ title: "Kira olmadingiz", description: error instanceof Error ? error.message : "Email va parolni tekshiring.", variant: "destructive" });
     } finally {
       setIsSubmitting(false);
     }
@@ -45,25 +45,25 @@ export function SignInPage() {
         <BrandHeader />
         <Card className="border-border/50 shadow-xl">
           <CardHeader className="text-center">
-            <CardTitle>Welcome back</CardTitle>
-            <CardDescription>Sign in to manage your AI sales agent.</CardDescription>
+            <CardTitle>Qaytib keldingiz</CardTitle>
+            <CardDescription>AI savdo agentingizni boshqarish uchun kiring.</CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
+                <Label htmlFor="email">Elektron pochta</Label>
                 <Input id="email" type="email" value={email} onChange={(event) => setEmail(event.target.value)} required autoComplete="email" />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="password">Password</Label>
+                <Label htmlFor="password">Parol</Label>
                 <Input id="password" type="password" value={password} onChange={(event) => setPassword(event.target.value)} required autoComplete="current-password" />
               </div>
               <Button type="submit" className="w-full" disabled={isSubmitting}>
-                {isSubmitting ? "Signing in..." : "Sign In"}
+                {isSubmitting ? "Kirilmoqda..." : "Kirish"}
               </Button>
             </form>
             <p className="text-sm text-muted-foreground text-center mt-6">
-              New to Zentra AI? <Link href="/sign-up" className="text-primary font-medium hover:underline">Create an account</Link>
+              Zentra AI da yangi foydalanuvchimisiz? <Link href="/sign-up" className="text-primary font-medium hover:underline">Hisob yarating</Link>
             </p>
           </CardContent>
         </Card>
@@ -88,7 +88,7 @@ export function SignUpPage() {
       await signUp(name, email, password);
       setLocation("/admin");
     } catch (error) {
-      toast({ title: "Could not create account", description: error instanceof Error ? error.message : "Please try again.", variant: "destructive" });
+      toast({ title: "Hisob yaratib bo'lmadi", description: error instanceof Error ? error.message : "Iltimos, qayta urinib ko'ring.", variant: "destructive" });
     } finally {
       setIsSubmitting(false);
     }
@@ -100,29 +100,29 @@ export function SignUpPage() {
         <BrandHeader />
         <Card className="border-border/50 shadow-xl">
           <CardHeader className="text-center">
-            <CardTitle>Create your account</CardTitle>
-            <CardDescription>Start building a product-aware sales agent for your business.</CardDescription>
+            <CardTitle>Hisobingizni yarating</CardTitle>
+            <CardDescription>Biznesingiz uchun mahsulotlarni biladigan savdo agentini yarating.</CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="name">Name</Label>
+                <Label htmlFor="name">Ism</Label>
                 <Input id="name" value={name} onChange={(event) => setName(event.target.value)} required autoComplete="name" />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
+                <Label htmlFor="email">Elektron pochta</Label>
                 <Input id="email" type="email" value={email} onChange={(event) => setEmail(event.target.value)} required autoComplete="email" />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="password">Password</Label>
+                <Label htmlFor="password">Parol</Label>
                 <Input id="password" type="password" value={password} onChange={(event) => setPassword(event.target.value)} required minLength={8} autoComplete="new-password" />
               </div>
               <Button type="submit" className="w-full" disabled={isSubmitting}>
-                {isSubmitting ? "Creating account..." : "Create Account"}
+                {isSubmitting ? "Hisob yaratilmoqda..." : "Hisob yaratish"}
               </Button>
             </form>
             <p className="text-sm text-muted-foreground text-center mt-6">
-              Already have an account? <Link href="/sign-in" className="text-primary font-medium hover:underline">Sign in</Link>
+              Hisobingiz bormi? <Link href="/sign-in" className="text-primary font-medium hover:underline">Kiring</Link>
             </p>
           </CardContent>
         </Card>

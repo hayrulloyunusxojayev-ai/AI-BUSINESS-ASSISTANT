@@ -10,9 +10,9 @@ import { useState } from "react";
 import { useAuth } from "@/lib/auth";
 
 const navItems = [
-  { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/admin/products", label: "Products", icon: Package },
-  { href: "/admin/settings", label: "Settings", icon: SettingsIcon },
+  { href: "/admin", label: "Boshqaruv paneli", icon: LayoutDashboard },
+  { href: "/admin/products", label: "Mahsulotlar", icon: Package },
+  { href: "/admin/settings", label: "Sozlamalar", icon: SettingsIcon },
 ];
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -41,19 +41,19 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       <div className="flex-1 overflow-auto py-6 px-4 space-y-1">
         <div className="mb-6 px-2">
           <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
-            Your Business
+            Biznesingiz
           </div>
           {businessLoading ? (
             <Skeleton className="h-6 w-32" />
           ) : business ? (
             <div className="font-medium text-sm truncate">{business.businessName}</div>
           ) : (
-            <div className="text-sm text-muted-foreground italic">No business setup yet</div>
+            <div className="text-sm text-muted-foreground italic">Biznes hali sozlanmagan</div>
           )}
         </div>
 
         <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-2 mb-2">
-          Menu
+          Menyu
         </div>
         {navItems.map((item) => {
           const isActive = location === item.href;
@@ -80,16 +80,16 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           <Button variant="outline" className="w-full mb-4 justify-start gap-2" asChild>
             <a href={`/chat/${business.shareLinkId}`} target="_blank" rel="noreferrer">
               <ExternalLink className="size-4" />
-              View Chat Page
+              Chat sahifasini ko'rish
             </a>
           </Button>
         )}
         <div className="flex items-center gap-3 px-2 mb-4">
           <div className="size-8 rounded-full bg-muted flex items-center justify-center overflow-hidden">
-            <div className="text-xs font-medium">{user?.name?.charAt(0).toUpperCase() || "U"}</div>
+            <div className="text-xs font-medium">{user?.name?.charAt(0).toUpperCase() || "F"}</div>
           </div>
           <div className="flex-1 min-w-0">
-            <div className="text-sm font-medium truncate">{user?.name || "User"}</div>
+            <div className="text-sm font-medium truncate">{user?.name || "Foydalanuvchi"}</div>
             <div className="text-xs text-muted-foreground truncate">{user?.email}</div>
           </div>
         </div>
@@ -99,7 +99,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           onClick={handleSignOut}
         >
           <LogOut className="size-4 mr-2" />
-          Sign Out
+          Chiqish
         </Button>
       </div>
     </>
