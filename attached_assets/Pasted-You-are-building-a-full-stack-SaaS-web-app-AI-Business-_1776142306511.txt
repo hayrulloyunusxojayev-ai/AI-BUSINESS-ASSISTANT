@@ -1,0 +1,142 @@
+You are building a full-stack SaaS web app: “AI Business Agent”.
+
+IMPORTANT GOAL:
+This is a multi-tenant AI system where each user has their own isolated data (products, chats, settings). No data should ever be shared between users.
+
+---
+
+TECH STACK:
+- Frontend: React (or Next.js if needed)
+- Backend: Node.js + Express
+- Database: SQLite or PostgreSQL (prefer SQLite for simplicity in Replit)
+- Auth: Google OAuth login
+- AI: OpenAI API for chat responses
+
+---
+
+CORE FEATURES:
+
+## 1. AUTH SYSTEM (CRITICAL)
+- Users must sign in using Google OAuth
+- Each user gets a unique user_id
+- All data must be tied to user_id
+- No shared/global product database
+
+---
+
+## 2. ADMIN PANEL (/admin)
+Only logged-in users can access.
+
+Features:
+- Add product:
+  - name
+  - price
+  - description
+  - image URL or upload
+- Edit product
+- Delete product
+- View all products
+
+IMPORTANT:
+- Products are UNIQUE PER USER
+- Example: User A products ≠ User B products
+
+---
+
+## 3. CLIENT CHAT PAGE (/chat)
+
+- Public page (NO login required)
+- Each admin has their own unique chat instance
+
+IMPORTANT PROBLEM TO SOLVE:
+We must identify which business the chat belongs to WITHOUT login.
+
+Solution:
+- Each admin gets a unique share link like:
+  /chat/{business_id}
+
+Each business_id belongs to ONE user.
+
+---
+
+CHAT FEATURES:
+- User can ask questions about products
+- AI responds like a sales assistant
+- AI must ONLY use products of that business_id
+- AI cannot access other users’ data
+
+Use OpenAI API to generate responses with a system prompt:
+
+SYSTEM PROMPT:
+"You are a sales assistant for an online store. Only use the provided product list. Your goal is to help the customer choose and buy products. Be friendly and persuasive."
+
+---
+
+## 4. DATABASE STRUCTURE
+
+Tables:
+
+Users:
+- id
+- google_id
+- email
+- name
+
+Businesses:
+- id
+- user_id
+- business_name
+- share_link_id (used for /chat/{id})
+
+Products:
+- id
+- user_id
+- business_id
+- name
+- price
+- description
+- image
+
+Chats (optional for logging):
+- id
+- business_id
+- message
+- response
+
+---
+
+## 5. DATA ISOLATION (VERY IMPORTANT)
+
+- Every query MUST include user_id or business_id filter
+- Never return all products globally
+- Never mix data between users
+
+---
+
+## 6. UI PAGES
+
+- / → landing page
+- /login → Google login
+- /admin → product management dashboard
+- /chat/{business_id} → customer chat page
+
+---
+
+## 7. EXTRA REQUIREMENTS
+
+- Clean simple UI (modern SaaS style)
+- Mobile friendly
+- Fast performance
+- Secure authentication
+- Basic error handling
+
+---
+
+## 8. FINAL GOAL
+
+This is a “mini AI Operating System for businesses” where:
+- Admin manages products
+- AI sells products automatically
+- Customers chat and get answers instantly
+
+Build the full working MVP, not just UI mockups.

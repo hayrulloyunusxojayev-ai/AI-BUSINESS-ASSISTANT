@@ -1,0 +1,182 @@
+You are improving an existing SaaS AI product.
+
+Project name must be changed to: Zentra AI
+
+---
+
+## 🚨 CRITICAL FIXES & IMPROVEMENTS
+
+Fix all bugs and complete missing features. This is a production-level MVP.
+
+---
+
+## 1. ❌ REMOVE CLERK COMPLETELY
+
+- Remove all Clerk dependencies and code
+- Replace authentication with Google OAuth (or simple email/password if needed)
+
+AUTH REQUIREMENTS:
+- Each user must have a unique user_id
+- Store users in database
+- Use session or JWT auth
+- Ensure user stays logged in
+
+---
+
+## 2. 🧠 FIX BUSINESS CREATION ERROR
+
+Problem: When creating a business, it shows "Error"
+
+Fix:
+
+- When user submits:
+  - business_name
+
+Backend must:
+- Verify user is authenticated
+- Create new business record:
+  - user_id (from logged-in user)
+  - business_name
+  - generate UNIQUE share_link_id (random string like "abc123xyz")
+
+- Return success response
+- Show proper error message if fails
+
+---
+
+## 3. 🌐 IMPLEMENT /chat/:business_id (VERY IMPORTANT)
+
+Create public route:
+
+/chat/:business_id
+
+Requirements:
+
+- No login required
+- Fetch business using business_id
+- Load ONLY that business's products
+
+---
+
+## 💬 CHAT SYSTEM
+
+- Create chat UI (like ChatGPT)
+- User sends message
+- Backend calls OpenAI API
+
+IMPORTANT:
+
+- Pass product list into AI prompt
+- AI must ONLY use those products
+
+SYSTEM PROMPT:
+
+"You are a professional sales assistant for an online store.
+Only use the provided product list.
+Help customers choose products and encourage them to buy.
+Be friendly, clear, and persuasive."
+
+---
+
+## 4. 🔐 STRICT DATA ISOLATION (CRITICAL)
+
+Fix all data leaks.
+
+Rules:
+
+- Every product query MUST include:
+  WHERE user_id = current_user_id
+
+- Every chat query MUST include:
+  WHERE business_id = selected business
+
+- NEVER return global data
+- Users must NOT see each other's products
+
+---
+
+## 5. 🛠 ADMIN PANEL (/admin)
+
+Fix and ensure it works:
+
+Features:
+- Add product (name, price, description, image)
+- Edit product
+- Delete product
+- List products
+
+IMPORTANT:
+- Products belong to specific user_id AND business_id
+
+---
+
+## 6. 🧬 DATABASE STRUCTURE
+
+Ensure correct schema:
+
+Users:
+- id
+- email
+- name
+- auth_provider
+
+Businesses:
+- id
+- user_id
+- business_name
+- share_link_id
+
+Products:
+- id
+- user_id
+- business_id
+- name
+- price
+- description
+- image
+
+---
+
+## 7. 🎨 REBRANDING
+
+- Replace ALL mentions of "Clerk" with "Zentra AI"
+- Update UI text:
+  - "Welcome to Zentra AI"
+  - clean modern SaaS design
+
+---
+
+## 8. 🧪 ERROR HANDLING
+
+- No generic "Error"
+- Show clear messages:
+  - "Failed to create business"
+  - "Unauthorized"
+  - "Product not found"
+
+---
+
+## 9. 📱 UI IMPROVEMENTS
+
+- Clean modern UI
+- Mobile friendly
+- Chat page looks like ChatGPT
+- Admin panel simple and usable
+
+---
+
+## 🎯 FINAL GOAL
+
+Working MVP where:
+
+- User logs in
+- Creates business (NO errors)
+- Adds products
+- Gets share link:
+  /chat/{business_id}
+- Customers open link and chat
+- AI answers using ONLY that business products
+
+---
+
+Fix everything and make the app fully functional.

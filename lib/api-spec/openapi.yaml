@@ -1,0 +1,588 @@
+openapi: 3.1.0
+info:
+  title: Api
+  version: 0.1.0
+  description: API specification
+servers:
+  - url: /api
+    description: Base API path
+tags:
+  - name: health
+    description: Health operations
+  - name: auth
+    description: Authentication operations
+  - name: businesses
+    description: Business management
+  - name: products
+    description: Product management
+  - name: chat
+    description: Public chat endpoints
+  - name: dashboard
+    description: Dashboard summaries
+paths:
+  /healthz:
+    get:
+      operationId: healthCheck
+      tags: [health]
+      summary: Health check
+      responses:
+        "200":
+          description: Healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
+
+  /auth/me:
+    get:
+      operationId: getMe
+      tags: [auth]
+      summary: Get current logged-in user
+      responses:
+        "200":
+          description: Current user or null
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MeResponse"
+
+  /auth/signup:
+    post:
+      operationId: signup
+      tags: [auth]
+      summary: Create a user account and session
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SignupBody"
+      responses:
+        "201":
+          description: Signed up
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        "409":
+          description: Email already registered
+
+  /auth/login:
+    post:
+      operationId: login
+      tags: [auth]
+      summary: Log in and create a session
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginBody"
+      responses:
+        "200":
+          description: Logged in
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        "401":
+          description: Invalid email or password
+
+  /auth/logout:
+    post:
+      operationId: logout
+      tags: [auth]
+      summary: Clear current session
+      responses:
+        "200":
+          description: Logged out
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LogoutResponse"
+
+  /businesses:
+    get:
+      operationId: getMyBusiness
+      tags: [businesses]
+      summary: Get current user's business
+      responses:
+        "200":
+          description: Business details or null
+          content:
+            application/json:
+              schema:
+                anyOf:
+                  - $ref: "#/components/schemas/Business"
+                  - type: "null"
+    post:
+      operationId: createBusiness
+      tags: [businesses]
+      summary: Create a business for current user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateBusinessBody"
+      responses:
+        "201":
+          description: Business created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Business"
+    put:
+      operationId: updateBusiness
+      tags: [businesses]
+      summary: Update current user's business
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateBusinessBody"
+      responses:
+        "200":
+          description: Business updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Business"
+
+  /products:
+    get:
+      operationId: listProducts
+      tags: [products]
+      summary: List products for current user's business
+      responses:
+        "200":
+          description: Product list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Product"
+    post:
+      operationId: createProduct
+      tags: [products]
+      summary: Create a product
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateProductBody"
+      responses:
+        "201":
+          description: Product created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Product"
+
+  /products/{id}:
+    get:
+      operationId: getProduct
+      tags: [products]
+      summary: Get a single product
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Product details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Product"
+    put:
+      operationId: updateProduct
+      tags: [products]
+      summary: Update a product
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateProductBody"
+      responses:
+        "200":
+          description: Product updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Product"
+    delete:
+      operationId: deleteProduct
+      tags: [products]
+      summary: Delete a product
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Product deleted
+
+  /chat/{shareLinkId}:
+    get:
+      operationId: getChatBusiness
+      tags: [chat]
+      summary: Get business info for a chat page (public)
+      parameters:
+        - name: shareLinkId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Business public info
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ChatBusinessInfo"
+        "404":
+          description: Business not found
+
+  /chat/{shareLinkId}/messages:
+    post:
+      operationId: sendChatMessage
+      tags: [chat]
+      summary: Send a chat message and get AI response (public, streamed)
+      parameters:
+        - name: shareLinkId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SendChatMessageBody"
+      responses:
+        "200":
+          description: Streamed AI response
+          content:
+            text/event-stream:
+              schema:
+                type: string
+
+  /dashboard/summary:
+    get:
+      operationId: getDashboardSummary
+      tags: [dashboard]
+      summary: Get dashboard summary stats for current user
+      responses:
+        "200":
+          description: Dashboard summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardSummary"
+
+  /chat/{shareLinkId}/history:
+    get:
+      operationId: getChatHistory
+      tags: [chat]
+      summary: Get recent chat history for a business (public)
+      parameters:
+        - name: shareLinkId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: sessionId
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Chat messages
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ChatMessage"
+
+components:
+  schemas:
+    HealthStatus:
+      type: object
+      properties:
+        status:
+          type: string
+      required:
+        - status
+
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+        email:
+          type: string
+        name:
+          type: string
+        authProvider:
+          type: string
+      required:
+        - id
+        - email
+        - name
+        - authProvider
+
+    MeResponse:
+      type: object
+      properties:
+        user:
+          anyOf:
+            - $ref: "#/components/schemas/User"
+            - type: "null"
+      required:
+        - user
+
+    AuthResponse:
+      type: object
+      properties:
+        user:
+          $ref: "#/components/schemas/User"
+      required:
+        - user
+
+    LogoutResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+      required:
+        - success
+
+    SignupBody:
+      type: object
+      properties:
+        name:
+          type: string
+        email:
+          type: string
+        password:
+          type: string
+      required:
+        - name
+        - email
+        - password
+
+    LoginBody:
+      type: object
+      properties:
+        email:
+          type: string
+        password:
+          type: string
+      required:
+        - email
+        - password
+
+    Business:
+      type: object
+      properties:
+        id:
+          type: integer
+        userId:
+          type: string
+        businessName:
+          type: string
+        shareLinkId:
+          type: string
+        createdAt:
+          type: string
+      required:
+        - id
+        - userId
+        - businessName
+        - shareLinkId
+
+    CreateBusinessBody:
+      type: object
+      properties:
+        businessName:
+          type: string
+      required:
+        - businessName
+
+    UpdateBusinessBody:
+      type: object
+      properties:
+        businessName:
+          type: string
+      required:
+        - businessName
+
+    Product:
+      type: object
+      properties:
+        id:
+          type: integer
+        userId:
+          type: string
+        businessId:
+          type: integer
+        name:
+          type: string
+        price:
+          type: string
+        description:
+          type: string
+        image:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+      required:
+        - id
+        - userId
+        - businessId
+        - name
+        - price
+        - description
+
+    CreateProductBody:
+      type: object
+      properties:
+        name:
+          type: string
+        price:
+          type: string
+        description:
+          type: string
+        image:
+          type: string
+          nullable: true
+      required:
+        - name
+        - price
+        - description
+
+    UpdateProductBody:
+      type: object
+      properties:
+        name:
+          type: string
+        price:
+          type: string
+        description:
+          type: string
+        image:
+          type: string
+          nullable: true
+      required:
+        - name
+        - price
+        - description
+
+    ChatBusinessInfo:
+      type: object
+      properties:
+        businessName:
+          type: string
+        productCount:
+          type: integer
+      required:
+        - businessName
+        - productCount
+
+    SendChatMessageBody:
+      type: object
+      properties:
+        message:
+          type: string
+        sessionId:
+          type: string
+        history:
+          type: array
+          items:
+            $ref: "#/components/schemas/ChatMessageInput"
+      required:
+        - message
+        - sessionId
+
+    ChatMessageInput:
+      type: object
+      properties:
+        role:
+          type: string
+          enum: [user, assistant]
+        content:
+          type: string
+      required:
+        - role
+        - content
+
+    ChatMessage:
+      type: object
+      properties:
+        id:
+          type: integer
+        role:
+          type: string
+        content:
+          type: string
+        createdAt:
+          type: string
+      required:
+        - id
+        - role
+        - content
+
+    DashboardSummary:
+      type: object
+      properties:
+        totalProducts:
+          type: integer
+        totalChats:
+          type: integer
+        recentChats:
+          type: array
+          items:
+            $ref: "#/components/schemas/RecentChat"
+        shareLinkId:
+          type: string
+          nullable: true
+      required:
+        - totalProducts
+        - totalChats
+        - recentChats
+
+    RecentChat:
+      type: object
+      properties:
+        sessionId:
+          type: string
+        messageCount:
+          type: integer
+        lastMessage:
+          type: string
+        lastMessageAt:
+          type: string
+      required:
+        - sessionId
+        - messageCount
+        - lastMessage
+        - lastMessageAt
