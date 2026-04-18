@@ -45,7 +45,7 @@ const frontendPath = path.resolve(__dirname, "../../dist");
 app.use(express.static(frontendPath));
 
 // --- SPA fallback (React Router) ---
-app.get("*", (req, res, next) => {
+app.get("/*", (req, res, next) => {
   if (!req.path.startsWith("/api")) {
     res.sendFile(path.join(frontendPath, "index.html"));
   } else {
