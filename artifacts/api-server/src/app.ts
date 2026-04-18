@@ -38,19 +38,21 @@ app.use(express.urlencoded({ extended: true }));
 // --- API ---
 app.use("/api", router);
 
-// --- Путь к фронтенду (Vite build) ---
-const frontendPath = path.resolve(__dirname, "../../dist");
+// --- FRONTEND (Vite build) ---
+const frontendPath = path.resolve(
+  __dirname,
+  "../../ai-business-agent/dist/public"
+);
 
-// --- Раздача статики ---
+// раздаём статику
 app.use(express.static(frontendPath));
 
-// --- SPA fallback (React Router) ---
-app.get("/*", (req, res, next) => {
-  if (!req.path.startsWith("/api")) {
-    res.sendFile(path.join(frontendPath, "index.html"));
-  } else {
-    next();
-  }
+// --- SPA fallback (ВАЖНО: без "*") ---
+app.use((req, res, next) => {
+  if (req.method !== "GET") return next();
+  if (req.path.startsWith("/api")) return next();
+
+  res.sendFile(path.join(frontendPath, "index.html"));
 });
 
 export default app;
