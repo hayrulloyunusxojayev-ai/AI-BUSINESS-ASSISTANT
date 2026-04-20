@@ -85,16 +85,38 @@ export function SignInPage() {
   useEffect(() => {
     const params = new URLSearchParams(search);
     const error = params.get("error");
-    if (error === "google_failed") {
-      toast({
-        title: "Google orqali kirish muvaffaqiyatsiz",
-        description: "Iltimos, qayta urinib ko'ring yoki email bilan kiring.",
-        variant: "destructive",
-      });
-    } else if (error === "google_not_configured") {
-      toast({
+    const errorMessages: Record<string, { title: string; description: string }> = {
+      google_failed: {
+        title: "Google login xatosi",
+        description: "Kutilmagan xato yuz berdi. Qayta urinib ko'ring.",
+      },
+      google_denied: {
+        title: "Kirish rad etildi",
+        description: "Google hisobiga kirish rad etildi.",
+      },
+      google_not_configured: {
         title: "Google login sozlanmagan",
-        description: "Administrator GOOGLE_CLIENT_ID va GOOGLE_CLIENT_SECRET ni sozlashi kerak.",
+        description: "Server sozlamalarida GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, GOOGLE_CALLBACK_URL bo'lishi kerak.",
+      },
+      google_token_failed: {
+        title: "Token xatosi",
+        description: "Google dan token olishda xato. Callback URL to'g'riligini tekshiring.",
+      },
+      google_no_email: {
+        title: "Email topilmadi",
+        description: "Google hisobidan email ma'lumoti olinmadi.",
+      },
+      google_userinfo_failed: {
+        title: "Foydalanuvchi ma'lumotlari xatosi",
+        description: "Google dan foydalanuvchi ma'lumotlari olinmadi.",
+      },
+    };
+    if (error && errorMessages[error]) {
+      toast({ ...errorMessages[error], variant: "destructive" });
+    } else if (error) {
+      toast({
+        title: "Kirish xatosi",
+        description: `Xato: ${error}`,
         variant: "destructive",
       });
     }
