@@ -8,7 +8,7 @@ export default function Home() {
           <div className="size-8 bg-primary rounded-xl flex items-center justify-center">
             <div className="size-3 bg-background rounded-sm" />
           </div>
-          Zentra AI
+          Woxom AI
         </div>
         <nav className="flex items-center gap-6">
           <Link href="/sign-in" className="text-sm font-medium hover:text-primary transition-colors">
@@ -39,7 +39,7 @@ export default function Home() {
           </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-8">
-            <Link href="/sign-up" className="w-full sm:w-auto text-base font-medium bg-primary text-primary-foreground px-8 py-4 rounded-full hover:bg-primary/90 transition-all hover-elevate">
+            <Link href="/sign-in" className="w-full sm:w-auto text-base font-medium bg-primary text-primary-foreground px-8 py-4 rounded-full hover:bg-primary/90 transition-all hover-elevate">
               Bepul boshlash
             </Link>
           </div>
@@ -56,7 +56,7 @@ export default function Home() {
                   <div className="size-3 rounded-full bg-green-400/80" />
                 </div>
                 <div className="ml-4 text-xs font-medium text-muted-foreground px-3 py-1.5 bg-background rounded-md border border-border/50">
-                  chat.zentra.ai/biznesingiz
+                  chat.woxom.ai/biznesingiz
                 </div>
               </div>
               <div className="flex-1 flex flex-col p-6 space-y-6 overflow-hidden">
@@ -80,7 +80,7 @@ export default function Home() {
       </main>
 
       <footer className="border-t border-border/40 py-12 text-center text-muted-foreground text-sm">
-        <p>© {new Date().getFullYear()} Zentra AI. Replit bilan yaratilgan.</p>
+        <p>© {new Date().getFullYear()} Woxom AI. Replit bilan yaratilgan.</p>
       </footer>
     </div>
   );

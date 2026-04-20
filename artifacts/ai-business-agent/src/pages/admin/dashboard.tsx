@@ -68,7 +68,7 @@ function SetupBusiness() {
           queryClient.setQueryData(getGetMyBusinessQueryKey(), newBusiness);
           toast({
             title: "Biznes yaratildi",
-            description: "Zentra AI agentingiz sozlanishga tayyor.",
+            description: "Woxom AI agentingiz sozlanishga tayyor.",
           });
         },
         onError: () => {
@@ -89,7 +89,7 @@ function SetupBusiness() {
           <div className="size-12 bg-primary/10 text-primary rounded-2xl flex items-center justify-center mx-auto mb-6">
             <TrendingUp className="size-6" />
           </div>
-          <h1 className="text-3xl font-bold tracking-tight">Zentra AI ga xush kelibsiz</h1>
+          <h1 className="text-3xl font-bold tracking-tight">Woxom AI ga xush kelibsiz</h1>
           <p className="text-muted-foreground text-balance">
             Biznesingizga nom berishdan boshlaylik. Bu chat interfeysida mijozlaringizga ko'rinadi.
           </p>

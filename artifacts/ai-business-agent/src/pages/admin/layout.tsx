@@ -35,7 +35,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           <div className="size-6 bg-primary rounded-lg flex items-center justify-center">
             <div className="size-2 bg-background rounded-sm" />
           </div>
-          Zentra AI
+          Woxom AI
         </div>
       </div>
       <div className="flex-1 overflow-auto py-6 px-4 space-y-1">
@@ -117,7 +117,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             <div className="size-6 bg-primary rounded-lg flex items-center justify-center">
               <div className="size-2 bg-background rounded-sm" />
             </div>
-            Zentra AI
+            Woxom AI
           </div>
           <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
             <SheetTrigger asChild>

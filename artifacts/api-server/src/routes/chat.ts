@@ -10,7 +10,7 @@ const router = Router();
 router.get("/chat/:shareLinkId", async (req, res) => {
   const paramsParsed = GetChatBusinessParams.safeParse({ shareLinkId: req.params.shareLinkId });
   if (!paramsParsed.success) {
-    res.status(400).json({ error: "Invalid share link" });
+    res.status(400).json({ error: "Noto'g'ri havola" });
     return;
   }
 
@@ -21,7 +21,7 @@ router.get("/chat/:shareLinkId", async (req, res) => {
     .limit(1);
 
   if (!business) {
-    res.status(404).json({ error: "Business not found" });
+    res.status(404).json({ error: "Biznes topilmadi" });
     return;
   }
 
@@ -39,13 +39,13 @@ router.get("/chat/:shareLinkId", async (req, res) => {
 router.post("/chat/:shareLinkId/messages", async (req, res) => {
   const paramsParsed = SendChatMessageParams.safeParse({ shareLinkId: req.params.shareLinkId });
   if (!paramsParsed.success) {
-    res.status(400).json({ error: "Invalid share link" });
+    res.status(400).json({ error: "Noto'g'ri havola" });
     return;
   }
 
   const bodyParsed = SendChatMessageBody.safeParse(req.body);
   if (!bodyParsed.success) {
-    res.status(400).json({ error: "Invalid input", details: bodyParsed.error });
+    res.status(400).json({ error: "Noto'g'ri ma'lumot", details: bodyParsed.error });
     return;
   }
 
@@ -56,7 +56,7 @@ router.post("/chat/:shareLinkId/messages", async (req, res) => {
     .limit(1);
 
   if (!business) {
-    res.status(404).json({ error: "Business not found" });
+    res.status(404).json({ error: "Biznes topilmadi" });
     return;
   }
 
@@ -66,13 +66,19 @@ router.post("/chat/:shareLinkId/messages", async (req, res) => {
     .where(and(eq(productsTable.businessId, business.id), eq(productsTable.userId, business.userId)));
 
   const productList = products
-    .map((p) => `- ${p.name}: $${p.price} — ${p.description}`)
+    .map((p) => `- ${p.name}: ${p.price} so'm — ${p.description}`)
     .join("\n");
 
-  const systemPrompt = `Siz "${business.businessName}" uchun savdo yordamchisisiz. Faqat berilgan mahsulotlar ro'yxatidan foydalaning. Maqsadingiz mijozlarga mahsulotlarni tanlash va sotib olishda yordam berishdir. Do'stona va ishontiruvchan bo'ling. Ro'yxatda bo'lmagan mahsulotlarni ixtiro qilmang. Hech qachon ChatGPT yoki OpenAI deb o'zingizni tanitmang. Har doim o'zbek tilida gapiring.
+  const systemPrompt = `Siz "${business.businessName}" do'konining savdo yordamchisisiz. Sizning ismingiz Woxom AI. Siz hech qachon ChatGPT, OpenAI yoki boshqa AI tizimi ekanligingizni aytmaysiz. Faqat o'zbek tilida gaplashing.
 
-Mavjud mahsulotlar:
-${productList || "Hozir mahsulotlar qo'shilmoqda. Siz nimani qidiryapsiz?"}`;
+Maqsadingiz: mijozlarga mahsulotlarni tanlashda yordam berish, savollariga javob berish va xaridga undash. Do'stona, ishontiruvchan va qisqa javob bering. Ro'yxatda bo'lmagan mahsulotlarni o'ylab topmang.
+
+${productList
+  ? `Mavjud mahsulotlar:\n${productList}`
+  : "Hozir mahsulotlar qo'shilmoqda. Siz nimani qidiryapsiz?"
+}
+
+Mijoz biror mahsulot haqida so'rasa, uning afzalliklarini ayt va xaridga taklif qil. Agar mahsulot yo'q bo'lsa, "Hozir mahsulotlar qo'shilmoqda. Siz nimani qidiryapsiz?" deb so'ra.`;
 
   const historyMessages = (bodyParsed.data.history || []).map((m) => ({
     role: m.role as "user" | "assistant",
@@ -93,8 +99,8 @@ ${productList || "Hozir mahsulotlar qo'shilmoqda. Siz nimani qidiryapsiz?"}`;
     let fullResponse = "";
 
     const stream = await openai.chat.completions.create({
-      model: "gpt-5.2",
-      max_completion_tokens: 8192,
+      model: "gpt-4o",
+      max_completion_tokens: 1024,
       messages: chatMessages,
       stream: true,
     });
@@ -126,7 +132,7 @@ ${productList || "Hozir mahsulotlar qo'shilmoqda. Siz nimani qidiryapsiz?"}`;
     res.end();
   } catch (error) {
     req.log.error({ error }, "Chat completion error");
-    res.write(`data: ${JSON.stringify({ error: "Failed to generate response" })}\n\n`);
+    res.write(`data: ${JSON.stringify({ error: "Javob yaratishda xato yuz berdi" })}\n\n`);
     res.end();
   }
 });
@@ -134,13 +140,13 @@ ${productList || "Hozir mahsulotlar qo'shilmoqda. Siz nimani qidiryapsiz?"}`;
 router.get("/chat/:shareLinkId/history", async (req, res) => {
   const paramsParsed = GetChatHistoryParams.safeParse({ shareLinkId: req.params.shareLinkId });
   if (!paramsParsed.success) {
-    res.status(400).json({ error: "Invalid share link" });
+    res.status(400).json({ error: "Noto'g'ri havola" });
     return;
   }
 
   const queryParsed = GetChatHistoryQueryParams.safeParse({ sessionId: req.query.sessionId });
   if (!queryParsed.success) {
-    res.status(400).json({ error: "sessionId query param required" });
+    res.status(400).json({ error: "sessionId query parametri talab qilinadi" });
     return;
   }
 
@@ -151,7 +157,7 @@ router.get("/chat/:shareLinkId/history", async (req, res) => {
     .limit(1);
 
   if (!business) {
-    res.status(404).json({ error: "Business not found" });
+    res.status(404).json({ error: "Biznes topilmadi" });
     return;
   }
 
