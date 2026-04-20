@@ -1,4 +1,4 @@
-import express, { type Express } from "express";
+import express, { type Express, type Request, type Response, type NextFunction } from "express";
 import path from "node:path";
 import cors from "cors";
 import cookieParser from "cookie-parser";
@@ -8,7 +8,6 @@ import { logger } from "./lib/logger";
 
 const app: Express = express();
 
-// --- Логирование ---
 app.use(
   pinoHttp({
     logger,
@@ -29,30 +28,35 @@ app.use(
   }),
 );
 
-// --- Middleware ---
 app.use(cors({ credentials: true, origin: true }));
 app.use(cookieParser());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// --- API ---
 app.use("/api", router);
 
-// --- FRONTEND (Vite build) ---
-const frontendPath = path.resolve(
-  __dirname,
-  "../../ai-business-agent/dist/public"
-);
-
-// раздаём статику
+// Serve frontend static files in production
+const frontendPath = path.resolve(__dirname, "../../ai-business-agent/dist/public");
 app.use(express.static(frontendPath));
 
-// --- SPA fallback (ВАЖНО: без "*") ---
-app.use((req, res, next) => {
+// SPA fallback — serve index.html for all non-API GET routes
+app.use((req: Request, res: Response, next: NextFunction) => {
   if (req.method !== "GET") return next();
   if (req.path.startsWith("/api")) return next();
-
   res.sendFile(path.join(frontendPath, "index.html"));
+});
+
+// Global error handler — always redirect auth errors, never show raw 500
+app.use((err: unknown, req: Request, res: Response, _next: NextFunction) => {
+  const message = err instanceof Error ? err.message : String(err);
+  logger.error({ err: message, url: req.url }, "Unhandled server error");
+
+  if (req.path.startsWith("/api/auth/google")) {
+    res.redirect("/sign-in?error=google_failed");
+    return;
+  }
+
+  res.status(500).json({ error: "Server xatosi yuz berdi" });
 });
 
 export default app;
