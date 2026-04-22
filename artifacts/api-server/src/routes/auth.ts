@@ -6,7 +6,6 @@ import { usersTable } from "@workspace/db";
 import { LoginBody, SignupBody } from "@workspace/api-zod";
 import { eq } from "drizzle-orm";
 import { createSession, destroySession, getSessionUserId } from "../lib/session";
-import type { Request } from "express";
 
 const scryptAsync = promisify(crypto.scrypt);
 const router = Router();
@@ -43,22 +42,14 @@ async function verifyPassword(password: string, storedHash: string) {
   return hashBuffer.length === derived.length && crypto.timingSafeEqual(hashBuffer, derived);
 }
 
-// Derives the callback URL from the request so it works on any domain
-// (Replit dev, Render prod, custom domain) without needing GOOGLE_CALLBACK_URL.
-// If GOOGLE_CALLBACK_URL is set, it takes precedence.
-function getCallbackUrl(req: Request): string {
-  if (process.env.GOOGLE_CALLBACK_URL) {
-    return process.env.GOOGLE_CALLBACK_URL;
+// Single source of truth for the OAuth callback URL.
+// Must match exactly what is registered in Google Cloud Console.
+function getCallbackUrl(): string {
+  const url = process.env.GOOGLE_CALLBACK_URL;
+  if (!url) {
+    throw new Error("GOOGLE_CALLBACK_URL is not set");
   }
-  const proto =
-    (req.headers["x-forwarded-proto"] as string | undefined)?.split(",")[0]?.trim() ||
-    req.protocol ||
-    "https";
-  const host =
-    (req.headers["x-forwarded-host"] as string | undefined)?.split(",")[0]?.trim() ||
-    req.get("host") ||
-    "";
-  return `${proto}://${host}/api/auth/google/callback`;
+  return url;
 }
 
 // ── Standard auth routes ────────────────────────────────────────────────────
@@ -123,14 +114,14 @@ router.post("/auth/logout", async (req, res) => {
 
 router.get("/auth/google", (req, res) => {
   const clientId = process.env.GOOGLE_CLIENT_ID;
-  if (!clientId) {
-    req.log.error("GOOGLE_CLIENT_ID is not set");
+  if (!clientId || !process.env.GOOGLE_CLIENT_SECRET || !process.env.GOOGLE_CALLBACK_URL) {
+    req.log.error("Google OAuth env vars missing");
     res.redirect("/sign-in?error=google_not_configured");
     return;
   }
 
-  const callbackUrl = getCallbackUrl(req);
-  req.log.info({ clientId: "set", callbackUrl }, "Google OAuth init");
+  const callbackUrl = getCallbackUrl();
+  req.log.info({ callbackUrl }, "Google OAuth init");
 
   const params = new URLSearchParams({
     client_id: clientId,
@@ -171,7 +162,7 @@ router.get("/auth/google/callback", async (req, res) => {
   }
 
   // The callback URL must be the same value used in the initial redirect
-  const callbackUrl = getCallbackUrl(req);
+  const callbackUrl = getCallbackUrl();
   req.log.info({ callbackUrl }, "Using callback URL for token exchange");
 
   try {

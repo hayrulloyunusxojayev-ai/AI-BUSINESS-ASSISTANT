@@ -6,11 +6,9 @@ import { eq } from "drizzle-orm";
 const SESSION_COOKIE_NAME = "woxom_session";
 const SESSION_DURATION_MS = 1000 * 60 * 60 * 24 * 30;
 
-// Always use sameSite:"none" + secure:true so the cookie survives:
-//   1. Cross-domain OAuth redirects (Google → callback → /admin)
-//   2. Render / Replit reverse-proxy environments (always HTTPS in prod)
-// In pure local http:// dev without a proxy this won't work, but Replit
-// dev always runs behind an HTTPS proxy, so this is safe.
+// Replit always runs behind an HTTPS proxy in dev and prod, so sameSite:"none"
+// + secure:true is required for the session cookie to survive the Google OAuth
+// redirect chain (Google → /api/auth/google/callback → /admin).
 const COOKIE_OPTIONS = {
   httpOnly: true,
   sameSite: "none" as const,

@@ -8,7 +8,7 @@ import { logger } from "./lib/logger";
 
 const app: Express = express();
 
-// Trust the reverse proxy (Render, Replit) so req.protocol and cookies work correctly
+// Trust the Replit reverse proxy so req.protocol and secure cookies work correctly
 app.set("trust proxy", 1);
 
 app.use(
