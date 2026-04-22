@@ -8,6 +8,9 @@ import { logger } from "./lib/logger";
 
 const app: Express = express();
 
+// Trust the reverse proxy (Render, Replit) so req.protocol and cookies work correctly
+app.set("trust proxy", 1);
+
 app.use(
   pinoHttp({
     logger,
