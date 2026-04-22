@@ -6,6 +6,7 @@ import { usersTable } from "@workspace/db";
 import { LoginBody, SignupBody } from "@workspace/api-zod";
 import { eq } from "drizzle-orm";
 import { createSession, destroySession, getSessionUserId } from "../lib/session";
+import type { Request } from "express";
 
 const scryptAsync = promisify(crypto.scrypt);
 const router = Router();
@@ -41,6 +42,26 @@ async function verifyPassword(password: string, storedHash: string) {
   const hashBuffer = Buffer.from(hash, "hex");
   return hashBuffer.length === derived.length && crypto.timingSafeEqual(hashBuffer, derived);
 }
+
+// Derives the callback URL from the request so it works on any domain
+// (Replit dev, Render prod, custom domain) without needing GOOGLE_CALLBACK_URL.
+// If GOOGLE_CALLBACK_URL is set, it takes precedence.
+function getCallbackUrl(req: Request): string {
+  if (process.env.GOOGLE_CALLBACK_URL) {
+    return process.env.GOOGLE_CALLBACK_URL;
+  }
+  const proto =
+    (req.headers["x-forwarded-proto"] as string | undefined)?.split(",")[0]?.trim() ||
+    req.protocol ||
+    "https";
+  const host =
+    (req.headers["x-forwarded-host"] as string | undefined)?.split(",")[0]?.trim() ||
+    req.get("host") ||
+    "";
+  return `${proto}://${host}/api/auth/google/callback`;
+}
+
+// ── Standard auth routes ────────────────────────────────────────────────────
 
 router.get("/auth/me", async (req, res) => {
   const userId = await getSessionUserId(req);
@@ -98,17 +119,18 @@ router.post("/auth/logout", async (req, res) => {
   res.json({ success: true });
 });
 
+// ── Google OAuth routes ─────────────────────────────────────────────────────
+
 router.get("/auth/google", (req, res) => {
   const clientId = process.env.GOOGLE_CLIENT_ID;
-  const callbackUrl = process.env.GOOGLE_CALLBACK_URL;
-
-  req.log.info({ clientId: clientId ? "set" : "missing", callbackUrl }, "Google OAuth init");
-
-  if (!clientId || !callbackUrl) {
-    req.log.error("Google OAuth not configured: missing GOOGLE_CLIENT_ID or GOOGLE_CALLBACK_URL");
+  if (!clientId) {
+    req.log.error("GOOGLE_CLIENT_ID is not set");
     res.redirect("/sign-in?error=google_not_configured");
     return;
   }
+
+  const callbackUrl = getCallbackUrl(req);
+  req.log.info({ clientId: "set", callbackUrl }, "Google OAuth init");
 
   const params = new URLSearchParams({
     client_id: clientId,
@@ -119,9 +141,7 @@ router.get("/auth/google", (req, res) => {
     prompt: "select_account",
   });
 
-  const url = `https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`;
-  req.log.info({ callbackUrl }, "Redirecting to Google OAuth");
-  res.redirect(url);
+  res.redirect(`https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`);
 });
 
 router.get("/auth/google/callback", async (req, res) => {
@@ -130,100 +150,75 @@ router.get("/auth/google/callback", async (req, res) => {
   req.log.info({ code: code ? "present" : "missing", googleError }, "Google OAuth callback received");
 
   if (googleError) {
-    req.log.error({ googleError }, "Google returned an error");
-    res.redirect(`/sign-in?error=google_denied`);
+    req.log.warn({ googleError }, "Google denied access");
+    res.redirect("/sign-in?error=google_denied");
     return;
   }
 
   if (!code || typeof code !== "string") {
-    req.log.error("No code in Google callback");
+    req.log.error("No auth code in Google callback");
     res.redirect("/sign-in?error=google_failed");
     return;
   }
 
   const clientId = process.env.GOOGLE_CLIENT_ID;
   const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
-  const callbackUrl = process.env.GOOGLE_CALLBACK_URL;
 
-  req.log.info({
-    clientId: clientId ? "set" : "missing",
-    clientSecret: clientSecret ? "set" : "missing",
-    callbackUrl,
-  }, "Google OAuth env check");
-
-  if (!clientId || !clientSecret || !callbackUrl) {
-    req.log.error("Google OAuth not configured in callback");
+  if (!clientId || !clientSecret) {
+    req.log.error("Missing GOOGLE_CLIENT_ID or GOOGLE_CLIENT_SECRET in callback");
     res.redirect("/sign-in?error=google_not_configured");
     return;
   }
 
+  // The callback URL must be the same value used in the initial redirect
+  const callbackUrl = getCallbackUrl(req);
+  req.log.info({ callbackUrl }, "Using callback URL for token exchange");
+
   try {
-    // Step 1: Exchange code for tokens
-    req.log.info({ callbackUrl }, "Exchanging code for tokens");
-
-    const tokenBody = new URLSearchParams({
-      code,
-      client_id: clientId,
-      client_secret: clientSecret,
-      redirect_uri: callbackUrl,
-      grant_type: "authorization_code",
-    });
-
-    const tokenResponse = await fetch("https://oauth2.googleapis.com/token", {
+    // Step 1: Exchange code for access token
+    const tokenRes = await fetch("https://oauth2.googleapis.com/token", {
       method: "POST",
       headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      body: tokenBody.toString(),
+      body: new URLSearchParams({
+        code,
+        client_id: clientId,
+        client_secret: clientSecret,
+        redirect_uri: callbackUrl,
+        grant_type: "authorization_code",
+      }).toString(),
     });
 
-    const tokenRaw = await tokenResponse.text();
-    req.log.info({ status: tokenResponse.status, body: tokenRaw }, "Token exchange response");
+    const tokenText = await tokenRes.text();
+    req.log.info({ status: tokenRes.status, body: tokenText }, "Token exchange result");
 
-    if (!tokenResponse.ok) {
-      req.log.error({ status: tokenResponse.status, body: tokenRaw }, "Token exchange failed");
+    if (!tokenRes.ok) {
+      req.log.error({ status: tokenRes.status, body: tokenText }, "Token exchange failed");
       res.redirect("/sign-in?error=google_token_failed");
       return;
     }
 
-    let tokenData: { access_token?: string; error?: string };
-    try {
-      tokenData = JSON.parse(tokenRaw) as { access_token?: string; error?: string };
-    } catch {
-      req.log.error({ tokenRaw }, "Failed to parse token response");
-      res.redirect("/sign-in?error=google_token_parse_failed");
-      return;
-    }
-
+    const tokenData = JSON.parse(tokenText) as { access_token?: string };
     if (!tokenData.access_token) {
-      req.log.error({ tokenData }, "No access_token in token response");
+      req.log.error({ tokenData }, "No access_token in response");
       res.redirect("/sign-in?error=google_no_token");
       return;
     }
 
-    // Step 2: Get user info
-    req.log.info("Fetching Google user info");
-
-    const userInfoResponse = await fetch("https://www.googleapis.com/oauth2/v2/userinfo", {
+    // Step 2: Get Google user info
+    const userInfoRes = await fetch("https://www.googleapis.com/oauth2/v2/userinfo", {
       headers: { Authorization: `Bearer ${tokenData.access_token}` },
     });
 
-    const userInfoRaw = await userInfoResponse.text();
-    req.log.info({ status: userInfoResponse.status, body: userInfoRaw }, "User info response");
+    const userInfoText = await userInfoRes.text();
+    req.log.info({ status: userInfoRes.status, body: userInfoText }, "User info result");
 
-    if (!userInfoResponse.ok) {
-      req.log.error({ status: userInfoResponse.status, body: userInfoRaw }, "User info fetch failed");
+    if (!userInfoRes.ok) {
+      req.log.error({ status: userInfoRes.status }, "User info fetch failed");
       res.redirect("/sign-in?error=google_userinfo_failed");
       return;
     }
 
-    let googleUser: { email?: string; name?: string; id?: string };
-    try {
-      googleUser = JSON.parse(userInfoRaw) as { email?: string; name?: string; id?: string };
-    } catch {
-      req.log.error({ userInfoRaw }, "Failed to parse user info");
-      res.redirect("/sign-in?error=google_userinfo_parse_failed");
-      return;
-    }
-
+    const googleUser = JSON.parse(userInfoText) as { email?: string; name?: string };
     if (!googleUser.email) {
       req.log.error({ googleUser }, "No email in Google user info");
       res.redirect("/sign-in?error=google_no_email");
@@ -232,30 +227,30 @@ router.get("/auth/google/callback", async (req, res) => {
 
     const email = normalizeEmail(googleUser.email);
     const name = googleUser.name || email.split("@")[0];
-
     req.log.info({ email, name }, "Google user identified");
 
-    // Step 3: Find or create user in DB
+    // Step 3: Find or create user
     let [user] = await db.select().from(usersTable).where(eq(usersTable.email, email)).limit(1);
-
     if (!user) {
-      req.log.info({ email }, "Creating new user from Google login");
-      const [newUser] = await db
+      req.log.info({ email }, "Creating new user from Google");
+      const [created] = await db
         .insert(usersTable)
         .values({ email, name, authProvider: "google", passwordHash: "" })
         .returning();
-      user = newUser;
+      user = created;
     } else {
-      req.log.info({ email, userId: user.id }, "Existing user found, logging in");
+      req.log.info({ email, userId: user.id }, "Existing user — logging in");
     }
 
-    // Step 4: Create session
+    // Step 4: Create session and redirect
     await createSession(res, String(user.id));
-    req.log.info({ userId: user.id }, "Session created, redirecting to /admin");
-
+    req.log.info({ userId: user.id }, "Session created — redirecting to /admin");
     res.redirect("/admin");
   } catch (err) {
-    req.log.error({ err: String(err), stack: err instanceof Error ? err.stack : undefined }, "Unexpected Google OAuth error");
+    req.log.error(
+      { err: String(err), stack: err instanceof Error ? err.stack : undefined },
+      "Unexpected error in Google callback"
+    );
     res.redirect("/sign-in?error=google_failed");
   }
 });
