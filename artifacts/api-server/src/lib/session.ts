@@ -6,12 +6,13 @@ import { eq } from "drizzle-orm";
 const SESSION_COOKIE_NAME = "woxom_session";
 const SESSION_DURATION_MS = 1000 * 60 * 60 * 24 * 30;
 
-// Replit always runs behind an HTTPS proxy in dev and prod, so sameSite:"none"
-// + secure:true is required for the session cookie to survive the Google OAuth
-// redirect chain (Google → /api/auth/google/callback → /admin).
+// sameSite:"none" is required so the session cookie survives the cross-site
+// Google OAuth redirect chain. `secure` must be true whenever sameSite is "none";
+// both Replit dev and Render production serve over HTTPS, so this works in both.
 const COOKIE_OPTIONS = {
   httpOnly: true,
   sameSite: "none" as const,
+  // sameSite:"none" requires secure:true; both Replit dev and Render are HTTPS
   secure: true,
   maxAge: SESSION_DURATION_MS,
   path: "/",

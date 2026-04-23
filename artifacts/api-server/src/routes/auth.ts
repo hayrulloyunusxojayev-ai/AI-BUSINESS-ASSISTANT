@@ -42,14 +42,22 @@ async function verifyPassword(password: string, storedHash: string) {
   return hashBuffer.length === derived.length && crypto.timingSafeEqual(hashBuffer, derived);
 }
 
-// Single source of truth for the OAuth callback URL.
-// Must match exactly what is registered in Google Cloud Console.
+// Production: hard-coded Render URL. Development: Replit env var.
 function getCallbackUrl(): string {
+  if (process.env.NODE_ENV === "production") {
+    return "https://woxsom.onrender.com/api/auth/google/callback";
+  }
   const url = process.env.GOOGLE_CALLBACK_URL;
   if (!url) {
     throw new Error("GOOGLE_CALLBACK_URL is not set");
   }
   return url;
+}
+
+function getAdminRedirectUrl(): string {
+  return process.env.NODE_ENV === "production"
+    ? "https://woxsom.onrender.com/admin"
+    : "/admin";
 }
 
 // ── Standard auth routes ────────────────────────────────────────────────────
@@ -235,8 +243,9 @@ router.get("/auth/google/callback", async (req, res) => {
 
     // Step 4: Create session and redirect
     await createSession(res, String(user.id));
-    req.log.info({ userId: user.id }, "Session created — redirecting to /admin");
-    res.redirect("/admin");
+    const adminUrl = getAdminRedirectUrl();
+    req.log.info({ userId: user.id, adminUrl }, "Session created — redirecting to admin");
+    res.redirect(adminUrl);
   } catch (err) {
     req.log.error(
       { err: String(err), stack: err instanceof Error ? err.stack : undefined },
