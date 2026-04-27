@@ -61,4 +61,4 @@ externalPort = 6000
 [userenv]
 
 [userenv.shared]
-GOOGLE_CALLBACK_URL = "https://633c74d1-1733-4209-902c-5853a0d90944-00-n2fd7vuxmqma.kirk.replit.dev/api/auth/google/callback"
+GOOGLE_CALLBACK_URL = "https://c31e0cd2-c666-471f-baa4-cf4586b17446-00-lhvztcuzmx42.pike.replit.dev/api/auth/google/callback"
