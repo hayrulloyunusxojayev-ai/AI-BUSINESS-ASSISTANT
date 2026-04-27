@@ -4,12 +4,9 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import NotFound from "@/pages/not-found";
 import Home from "@/pages/home";
-import Chat from "@/pages/chat";
+import Analyze from "@/pages/analyze";
 import { SignInPage, SignUpPage } from "@/pages/auth";
 import AdminLayout from "@/pages/admin/layout";
-import Dashboard from "@/pages/admin/dashboard";
-import Products from "@/pages/admin/products";
-import Settings from "@/pages/admin/settings";
 import { AuthProvider, useAuth } from "@/lib/auth";
 
 const queryClient = new QueryClient();
@@ -19,7 +16,7 @@ function HomeRedirect() {
   const { user, isLoading } = useAuth();
 
   if (isLoading) return null;
-  if (user) return <Redirect to="/admin" />;
+  if (user) return <Redirect to="/app" />;
   return <Home />;
 }
 
@@ -27,11 +24,11 @@ function PublicAuthRoute({ component: Component }: { component: React.ComponentT
   const { user, isLoading } = useAuth();
 
   if (isLoading) return null;
-  if (user) return <Redirect to="/admin" />;
+  if (user) return <Redirect to="/app" />;
   return <Component />;
 }
 
-function AdminRoute({ component: Component }: { component: React.ComponentType }) {
+function AppRoute({ component: Component }: { component: React.ComponentType }) {
   const { user, isLoading } = useAuth();
   const [location] = useLocation();
 
@@ -51,10 +48,9 @@ function Routes() {
       <Route path="/" component={HomeRedirect} />
       <Route path="/sign-in" component={() => <PublicAuthRoute component={SignInPage} />} />
       <Route path="/sign-up" component={() => <PublicAuthRoute component={SignUpPage} />} />
-      <Route path="/chat/:shareLinkId" component={Chat} />
-      <Route path="/admin" component={() => <AdminRoute component={Dashboard} />} />
-      <Route path="/admin/products" component={() => <AdminRoute component={Products} />} />
-      <Route path="/admin/settings" component={() => <AdminRoute component={Settings} />} />
+      <Route path="/app" component={() => <AppRoute component={Analyze} />} />
+      {/* Backwards compat: old /admin link still works */}
+      <Route path="/admin" component={() => <Redirect to="/app" />} />
       <Route component={NotFound} />
     </Switch>
   );

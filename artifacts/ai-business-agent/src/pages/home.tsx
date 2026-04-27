@@ -27,52 +27,45 @@ export default function Home() {
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
               <span className="relative inline-flex rounded-full size-2 bg-primary"></span>
             </span>
-            Yangi yuqori ko'rsatkichli yordamchingizni tanishing
+            Mijoz xabarini savdoga aylantiring
           </div>
-          
+
           <h1 className="text-5xl md:text-7xl font-bold tracking-tighter text-balance">
-            Biznesingizni biladigan <span className="text-primary">AI savdo yordamchisi.</span>
+            Mijoz xabarlarini <span className="text-primary">savdoga aylantiruvchi AI yordamchi.</span>
           </h1>
-          
+
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto text-balance leading-relaxed">
-            Mahsulotlar katalogingizni yuklang va mijozlar savollariga javob berish va savdolarni yopish uchun 24/7 tayyor aqlli yordamchi oling.
+            Mijoz xabarini joylashtiring — AI yordamchi mijozga yuborish uchun tayyor javobni va xaridni yopish uchun keyingi qadamni darhol beradi.
           </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-8">
-            <Link href="/sign-in" className="w-full sm:w-auto text-base font-medium bg-primary text-primary-foreground px-8 py-4 rounded-full hover:bg-primary/90 transition-all hover-elevate">
+            <Link href="/sign-up" className="w-full sm:w-auto text-base font-medium bg-primary text-primary-foreground px-8 py-4 rounded-full hover:bg-primary/90 transition-all hover-elevate">
               Bepul boshlash
             </Link>
           </div>
         </div>
 
-        <div className="mt-24 md:mt-32 max-w-5xl w-full mx-auto relative">
-          <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent z-10 h-full" />
-          <div className="rounded-2xl border border-border/50 bg-card p-2 md:p-4 shadow-2xl overflow-hidden">
-            <div className="rounded-xl border border-border/50 bg-background overflow-hidden flex flex-col h-[500px]">
-              <div className="h-14 border-b border-border/50 flex items-center px-6 gap-3 bg-muted/30">
-                <div className="flex gap-1.5">
-                  <div className="size-3 rounded-full bg-red-400/80" />
-                  <div className="size-3 rounded-full bg-amber-400/80" />
-                  <div className="size-3 rounded-full bg-green-400/80" />
-                </div>
-                <div className="ml-4 text-xs font-medium text-muted-foreground px-3 py-1.5 bg-background rounded-md border border-border/50">
-                  chat.woxom.ai/biznesingiz
-                </div>
+        <div className="mt-24 md:mt-32 max-w-4xl w-full mx-auto">
+          <div className="rounded-2xl border border-border/50 bg-card p-6 md:p-8 shadow-2xl text-left space-y-6">
+            <div>
+              <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">Mijoz xabari</div>
+              <div className="bg-muted/50 border border-border/40 px-4 py-3 rounded-xl text-sm">
+                "Salom, sizdagi qora rangli krossovkangiz 42 o'lchamda bormi? Narxi qancha?"
               </div>
-              <div className="flex-1 flex flex-col p-6 space-y-6 overflow-hidden">
-                <div className="flex justify-end">
-                  <div className="bg-primary text-primary-foreground px-4 py-3 rounded-2xl rounded-tr-sm max-w-[80%] text-sm">
-                    Ochiq ofis uchun mos mexanik klaviaturalaringiz bormi?
-                  </div>
-                </div>
-                <div className="flex gap-4 max-w-[80%]">
-                  <div className="size-8 rounded-full bg-primary/20 flex items-center justify-center shrink-0 mt-1">
-                    <div className="size-2 bg-primary rounded-sm" />
-                  </div>
-                  <div className="bg-muted px-4 py-3 rounded-2xl rounded-tl-sm text-sm text-foreground leading-relaxed">
-                    Ha, <span className="font-semibold">Keychron K8 Pro</span>ni tavsiya qilaman. U Gateron Red tugmachalaridan foydalanadi — ular sezgir lekin jim, bu esa ochiq ofis muhiti uchun juda mos. Hozir omborda mavjud, narxi $99. Texnik xususiyatlarini ko'rishni xohlaysizmi?
-                  </div>
-                </div>
+            </div>
+
+            <div className="grid md:grid-cols-2 gap-4">
+              <div className="bg-primary/5 border border-primary/20 rounded-xl p-4 space-y-2">
+                <div className="text-xs font-semibold uppercase tracking-wider text-primary">Mijozga javob</div>
+                <p className="text-sm leading-relaxed">
+                  "Ha, qora 42-o'lcham omborda mavjud, narxi 590 000 so'm. Hoziroq band qilib qo'yaymi?"
+                </p>
+              </div>
+              <div className="bg-card border border-border/50 rounded-xl p-4 space-y-2">
+                <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Sizning keyingi qadamingiz</div>
+                <p className="text-sm leading-relaxed">
+                  Mijoz aniq qiziqmoqda — yetkazib berish manzilini so'rab, hoziroq xaridni yoping.
+                </p>
               </div>
             </div>
           </div>
