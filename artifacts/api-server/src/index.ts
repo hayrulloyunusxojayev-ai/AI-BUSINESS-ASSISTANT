@@ -34,7 +34,7 @@ async function main() {
 
   const bot = createTelegramBot();
   if (bot) {
-    await launchBot(bot);
+    launchBot(bot);
   }
 }
 

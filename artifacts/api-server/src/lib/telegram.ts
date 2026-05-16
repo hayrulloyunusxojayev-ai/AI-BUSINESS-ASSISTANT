@@ -25,25 +25,73 @@ export function createTelegramBot(): Telegraf | null {
 
     try {
       await ctx.sendChatAction("typing");
+
       const { reply } = await analyzeCustomerMessage(userText);
-      await ctx.reply(reply, { reply_parameters: { message_id: ctx.message.message_id } });
+
+      await ctx.reply(reply, {
+        reply_parameters: { message_id: ctx.message.message_id },
+      });
+
       logger.info({ senderId }, "Telegram reply sent");
     } catch (err) {
-      logger.error({ err: String(err), senderId }, "Failed to process Telegram message");
-      await ctx.reply("Xabarni qayta ishlashda xato yuz berdi. Iltimos, qayta urinib ko'ring.").catch(() => null);
+      const errMessage = err instanceof Error ? err.message : String(err);
+      const errStack = err instanceof Error ? err.stack : undefined;
+      logger.error(
+        { err: errMessage, stack: errStack, senderId },
+        "Failed to process Telegram message",
+      );
+      await ctx
+        .reply(
+          "Xabarni qayta ishlashda xato yuz berdi. Iltimos, qayta urinib ko'ring.",
+        )
+        .catch(() => null);
     }
   });
 
   bot.catch((err, ctx) => {
-    logger.error({ err: String(err), updateType: ctx.updateType }, "Telegraf unhandled error");
+    const errMessage = err instanceof Error ? err.message : String(err);
+    const errStack = err instanceof Error ? err.stack : undefined;
+    logger.error(
+      { err: errMessage, stack: errStack, updateType: ctx.updateType },
+      "Telegraf unhandled error",
+    );
   });
 
   return bot;
 }
 
-export async function launchBot(bot: Telegraf): Promise<void> {
-  await bot.launch({ dropPendingUpdates: true });
-  logger.info("Telegram bot started (long polling)");
+export function launchBot(bot: Telegraf): void {
+  const MAX_RETRIES = 5;
+  const RETRY_DELAY_MS = 15_000;
+
+  const attempt = (retry: number) => {
+    bot
+      .launch({ dropPendingUpdates: true })
+      .then(() => {
+        logger.info("Telegram bot stopped cleanly");
+      })
+      .catch(async (err: unknown) => {
+        const errStr = String(err);
+        const is409 = errStr.includes("409");
+
+        if (is409 && retry < MAX_RETRIES) {
+          logger.warn(
+            { retry, nextRetryMs: RETRY_DELAY_MS },
+            "Telegram 409 conflict — another polling session is active. Retrying...",
+          );
+          await new Promise((r) => setTimeout(r, RETRY_DELAY_MS));
+          attempt(retry + 1);
+        } else {
+          logger.error(
+            { err: errStr, retry },
+            "Telegram bot failed to start — will not retry",
+          );
+        }
+      });
+  };
+
+  attempt(1);
+  logger.info("Telegram bot starting (long polling)...");
 
   process.once("SIGINT", () => bot.stop("SIGINT"));
   process.once("SIGTERM", () => bot.stop("SIGTERM"));
