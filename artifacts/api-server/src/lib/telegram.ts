@@ -54,10 +54,10 @@ const TECH_ERROR =
   "Произошла техническая ошибка. Попробуйте снова.";
 
 function formatProductList(products: Product[]): string {
-  if (products.length === 0) return "_(mahsulotlar topilmadi)_";
+  if (products.length === 0) return "(mahsulotlar topilmadi)";
   return products
     .map((p, i) => {
-      let line = `${i + 1}. *${p.name}* — ${p.price}`;
+      let line = `${i + 1}. ${p.name} — ${p.price}`;
       if (p.size) line += `\n   📐 ${p.size}`;
       if (p.description) line += `\n   📝 ${p.description}`;
       return line;

@@ -19,6 +19,56 @@ const TECH_ERROR =
   "🙏 Hozircha tizimda texnik xatolik. Iltimos, birozdan so'ng qayta urinib ko'ring.\n\n" +
   "Произошла техническая ошибка. Попробуйте позже.";
 
+// ── Per-customer last AI reply (for order context in owner notifications) ────
+// key: `${botToken}:${customerChatId}`
+
+const lastAiReply = new Map<string, string>();
+
+function sessionKey(token: string, chatId: string): string {
+  return `${token.split(":")[0]}:${chatId}`;
+}
+
+// ── Send notification to the store owner via the admin bot ───────────────────
+
+async function notifyOwner(
+  ownerChatId: string,
+  storeName: string,
+  orderContext: string,
+  customerText: string,
+): Promise<void> {
+  const adminToken = process.env.TELEGRAM_BOT_TOKEN;
+  if (!adminToken) return;
+
+  const text =
+    "🔔 YANGI BUYURTMA!\n\n" +
+    `🏪 Do'kon: ${storeName}\n` +
+    `📦 Buyurtma: ${orderContext}\n` +
+    `📍 Manzil va Tel: ${customerText}`;
+
+  try {
+    const res = await fetch(
+      `https://api.telegram.org/bot${adminToken}/sendMessage`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ chat_id: ownerChatId, text }),
+      },
+    );
+    const data = (await res.json()) as { ok: boolean; description?: string };
+    if (!data.ok) {
+      logger.warn(
+        { ownerChatId, desc: data.description },
+        "[BOT-MANAGER] owner notification failed",
+      );
+    }
+  } catch (err) {
+    logger.error(
+      { ownerChatId, err: String(err) },
+      "[BOT-MANAGER] owner notification error",
+    );
+  }
+}
+
 // ── Active store bot registry ─────────────────────────────────────────────────
 
 const activeBots = new Map<string, Telegraf>();
@@ -53,13 +103,30 @@ function buildStoreBot(token: string, storeName: string): Telegraf {
 
     try {
       logger.info(
-        { bot: tokenKey(token), chatId, text },
+        { bot: tokenKey(token), chatId, textLen: text.length },
         "[CLIENT-BOT] customer message received",
       );
 
-      // Phone number → instant order confirmation
+      // Phone number / address → order confirmation + owner notification
       if (PHONE_RE.test(text)) {
+        // Confirm to customer immediately
         await ctx.reply(ORDER_CONFIRMATION);
+
+        // Look up store for owner chat ID and store name
+        const store = await getStoreByBotToken(token);
+        if (store?.ownerChatId) {
+          const orderContext =
+            lastAiReply.get(sessionKey(token, chatId)) ??
+            "Mijoz mahsulot so'radi (tarix mavjud emas)";
+          lastAiReply.delete(sessionKey(token, chatId));
+
+          await notifyOwner(
+            store.ownerChatId,
+            store.storeName,
+            orderContext,
+            text,
+          );
+        }
         return;
       }
 
@@ -75,6 +142,9 @@ function buildStoreBot(token: string, storeName: string): Telegraf {
         { bot: tokenKey(token), chatId, elapsedMs: Date.now() - startMs },
         "[CLIENT-BOT] AI reply generated",
       );
+
+      // Cache the AI reply so it can be included in the order notification
+      lastAiReply.set(sessionKey(token, chatId), reply);
 
       await ctx.reply(reply, {
         reply_parameters: { message_id: ctx.message.message_id },
@@ -108,13 +178,12 @@ function buildStoreBot(token: string, storeName: string): Telegraf {
 // ── Launch a single store bot ─────────────────────────────────────────────────
 
 export function launchStoreBot(token: string, storeName: string): void {
-  // Stop any existing instance for this token first
   const existing = activeBots.get(token);
   if (existing) {
     try {
       existing.stop();
     } catch {
-      // ignore stop errors
+      // ignore
     }
     activeBots.delete(token);
   }
@@ -130,8 +199,7 @@ export function launchStoreBot(token: string, storeName: string): void {
       })
       .catch(async (err: unknown) => {
         const s = String(err);
-        const is409 = s.includes("409");
-        if (is409 && retry < 4) {
+        if (s.includes("409") && retry < 4) {
           logger.warn(
             { bot: tokenKey(token), retry },
             "[CLIENT-BOT] 409 conflict — retrying in 15s",
