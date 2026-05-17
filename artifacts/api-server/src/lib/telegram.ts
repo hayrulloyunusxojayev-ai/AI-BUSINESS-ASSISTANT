@@ -31,7 +31,7 @@ type ConvState = {
   flow?: FlowType;
   pendingStoreName?: string;
   pendingBotToken?: string;
-  pendingBotUsername?: string;
+  pendingBotUsername?: string; // real username from Telegram getMe, e.g. "techstore_woxsom_bot"
   pendingProducts?: Product[];
 };
 
@@ -65,29 +65,47 @@ function formatProductList(products: Product[]): string {
     .join("\n\n");
 }
 
+/**
+ * Validate a bot token by calling Telegram's getMe endpoint.
+ * Also enforces the Woxom brand requirement: username must contain "woxsom_bot".
+ * Returns { valid: true, username } on success, or { valid: false, error } on failure.
+ */
 async function validateBotToken(
   token: string,
-): Promise<{ valid: boolean; username?: string; error?: string }> {
+): Promise<{ valid: true; username: string } | { valid: false; error: string }> {
   try {
     const res = await fetch(`https://api.telegram.org/bot${token}/getMe`);
-    const data = (await res.json()) as { ok: boolean; result?: { username?: string } };
-    if (!data.ok || !data.result?.username) {
-      return { valid: false, error: "Token yaroqsiz — @BotFather dan to'g'ri tokenni oling." };
+    if (!res.ok) {
+      return { valid: false, error: "❌ Telegram API dan xato javobi keldi. Tokenni tekshirib qayta yuboring." };
     }
-    const username = data.result.username.toLowerCase();
-    if (!username.includes("woxsom_bot")) {
+    const data = (await res.json()) as { ok: boolean; result?: { username?: string; first_name?: string } };
+
+    if (!data.ok || !data.result) {
+      return { valid: false, error: "❌ Token yaroqsiz — @BotFather dan to'g'ri tokenni oling." };
+    }
+
+    if (!data.result.username) {
+      return { valid: false, error: "❌ Bot username topilmadi. @BotFather orqali botingizga username qo'shing." };
+    }
+
+    const username = data.result.username; // preserve original casing for display
+    if (!username.toLowerCase().includes("woxsom_bot")) {
       return {
         valid: false,
         error:
-          `❌ Bot username @${data.result.username} qabul qilinmadi.\n\n` +
-          "Woxom AI brendi uchun bot username *_woxsom_bot* so'zini o'z ichiga olishi kerak.\n" +
-          "Masalan: `@techstore_woxsom_bot`, `@fashion_woxsom_bot`\n\n" +
-          "@BotFather da `/setusername` buyrug'i bilan o'zgartiring, so'ng tokenni qayta yuboring.",
+          `❌ *@${username}* qabul qilinmadi.\n\n` +
+          "Woxom AI platformasi uchun bot username *\\_woxsom\\_bot* so'zini o'z ichiga olishi shart.\n\n" +
+          "✅ To'g'ri misollar:\n" +
+          "`techstore_woxsom_bot`\n" +
+          "`fashion_woxsom_bot`\n\n" +
+          "@BotFather → /setusername → yangi username o'rnating, so'ng tokenni qayta yuboring.",
       };
     }
-    return { valid: true, username: data.result.username };
-  } catch {
-    return { valid: false, error: "Telegram API ga ulanib bo'lmadi. Qayta urinib ko'ring." };
+
+    return { valid: true, username };
+  } catch (err) {
+    logger.error({ err: String(err) }, "[ADMIN-BOT] validateBotToken network error");
+    return { valid: false, error: "❌ Telegram API ga ulanib bo'lmadi. Internet aloqasini tekshiring va qayta urinib ko'ring." };
   }
 }
 
@@ -100,9 +118,9 @@ async function handleText(
   sendTyping: () => Promise<unknown>,
 ): Promise<void> {
   const state = getState(chatId);
-  logger.info({ chatId, stage: state.stage, text }, "[ADMIN-BOT] message in");
+  logger.info({ chatId, stage: state.stage, textLen: text.length }, "[ADMIN-BOT] message in");
 
-  // ── AWAITING_STORE_NAME ──────────────────────────────────────────────────
+  // ── STEP 1 — AWAITING_STORE_NAME ─────────────────────────────────────────
   if (state.stage === "AWAITING_STORE_NAME") {
     const storeName = text.trim();
     if (storeName.length < 2) {
@@ -112,57 +130,66 @@ async function handleText(
     setState(chatId, { stage: "AWAITING_BOT_TOKEN", flow: "setup", pendingStoreName: storeName });
     await reply(
       `✅ *${storeName}* — ajoyib nom!\n\n` +
-        "2-qadam: Mijozlar uchun *dedikatsiyalangan bot* yarating.\n\n" +
-        "📋 *Qanday qilish:*\n" +
+        "━━━━━━━━━━━━━━━━━\n" +
+        "2️⃣ *Dedikatsiyalangan bot yarating*\n\n" +
+        "📋 Qanday qilish:\n" +
         "1. @BotFather ga yozing → /newbot\n" +
-        "2. Bot nomini kiriting\n" +
-        "3. Username oxiri `_woxsom_bot` bilan tugashi kerak\n" +
+        "2. Bot nomini kiriting (masalan: `TechStore Assistant`)\n" +
+        "3. Username oxiri *\\_woxsom\\_bot* bo'lishi kerak\n" +
         "   _(masalan: `techstore_woxsom_bot`)_\n" +
         "4. BotFather bergan *tokenni* shu yerga yuboring\n\n" +
-        "⬇️ Token ko'rinishi: `7123456789:AAF...`",
+        "⬇️ Token ko'rinishi: `7123456789:AAFxxx...`",
       { parse_mode: "Markdown" },
     );
     return;
   }
 
-  // ── AWAITING_BOT_TOKEN ───────────────────────────────────────────────────
+  // ── STEP 2 — AWAITING_BOT_TOKEN ──────────────────────────────────────────
   if (state.stage === "AWAITING_BOT_TOKEN") {
     const token = text.trim().replace(/\s/g, "");
+
+    // Basic format check before hitting the API
     if (!/^\d{8,12}:[\w\-]{35,}$/.test(token)) {
       await reply(
-        "❌ Token formati noto'g'ri.\n\n" +
-          "To'g'ri format: `1234567890:AAF_abc123...`\n" +
-          "@BotFather dan olgan tokenni aynan shu ko'rinishda yuboring.",
+        "❌ *Token formati noto'g'ri.*\n\n" +
+          "To'g'ri format: `1234567890:AAFxxx...`\n\n" +
+          "@BotFather bergan tokenni aynan shu ko'rinishda yuboring.",
         { parse_mode: "Markdown" },
       );
       return;
     }
 
-    await reply("⏳ Token tekshirilmoqda...");
-    const { valid, username, error } = await validateBotToken(token);
+    await reply("⏳ Token Telegram API orqali tekshirilmoqda...");
 
-    if (!valid) {
-      await reply(error ?? "Token yaroqsiz.", { parse_mode: "Markdown" });
+    const result = await validateBotToken(token);
+
+    if (!result.valid) {
+      // Stay in AWAITING_BOT_TOKEN so owner can retry
+      await reply(result.error, { parse_mode: "Markdown" });
       return;
     }
 
+    // Token is valid — store it and move to product step
     setState(chatId, {
       ...state,
       stage: "AWAITING_PRODUCTS",
       pendingBotToken: token,
-      pendingBotUsername: username,
+      pendingBotUsername: result.username,
     });
 
     await reply(
-      `✅ Token tasdiqlandi! Bot: *@${username}*\n\n` +
-        "3-qadam: Telegram kanal yoki guruhingizdan mahsulotlar, narxlar va o'lchamlar haqidagi *matnni nusxalab* shu yerga yuboring:\n\n" +
-        "_(Kanal postlari, narx-list, mahsulot tavsiflarini to'liq yuboring)_",
+      `✅ *Token tasdiqlandi!*\n\n` +
+        `🤖 Bot: *@${result.username}*\n\n` +
+        "━━━━━━━━━━━━━━━━━\n" +
+        "3️⃣ *Mahsulotlar katalogini yuboring*\n\n" +
+        "Telegram kanal yoki guruhingizdan mahsulotlar, narxlar va o'lchamlar haqidagi *matnni nusxalab* shu yerga yuboring.\n\n" +
+        "_(Kanal postlari, narx-list, mahsulot tavsiflarini to'liq yuboring — AI avtomatik ajratadi)_",
       { parse_mode: "Markdown" },
     );
     return;
   }
 
-  // ── AWAITING_PRODUCTS ────────────────────────────────────────────────────
+  // ── STEP 3 — AWAITING_PRODUCTS ───────────────────────────────────────────
   if (state.stage === "AWAITING_PRODUCTS") {
     if (text.trim().length < 10) {
       await reply("Matn juda qisqa. Mahsulotlar haqida to'liq ma'lumot yuboring:");
@@ -175,6 +202,7 @@ async function handleText(
     try {
       products = await parseProductsFromText(text);
     } catch (err) {
+      logger.error({ err: String(err) }, "[ADMIN-BOT] parseProductsFromText failed");
       await reply(`❌ AI tahlil qilishda xato: ${err instanceof Error ? err.message : String(err)}`);
       return;
     }
@@ -183,7 +211,7 @@ async function handleText(
       await reply(
         "❌ Matndan hech qanday mahsulot topilmadi.\n\n" +
           "Mahsulot nomi va narxi aniq ko'rsatilgan matnni yuboring.\n" +
-          "Masalan: `Nike Air Max — 450 000 so'm, o'lcham: 40-45`",
+          "Masalan:\n`Nike Air Max — 450 000 so'm, o'lcham: 40-45`",
         { parse_mode: "Markdown" },
       );
       return;
@@ -194,56 +222,69 @@ async function handleText(
     await reply(
       `🔍 AI *${products.length}* ta mahsulot topdi:\n\n` +
         formatProductList(products) +
-        "\n\n---\n✅ *To'g'rimi?* Tasdiqlash uchun *Ha*, rad etish uchun *Yo'q* yuboring.",
+        "\n\n━━━━━━━━━━━━━━━━━\n" +
+        "✅ *To'g'rimi?*\n" +
+        "Tasdiqlash uchun *Ha*, qayta yuborish uchun *Yo'q* deb yozing.",
       { parse_mode: "Markdown" },
     );
     return;
   }
 
-  // ── AWAITING_CONFIRMATION ────────────────────────────────────────────────
+  // ── CONFIRMATION — Ha / Yo'q ─────────────────────────────────────────────
   if (state.stage === "AWAITING_CONFIRMATION") {
     const lower = text.trim().toLowerCase();
-    const isYes = ["ha", "yes", "да", "✅", "ok", "+", "to'g'ri"].some((w) =>
+    const isYes = ["ha", "yes", "да", "✅", "ok", "+", "to'g'ri", "tasdiqlash"].some((w) =>
       lower.includes(w),
     );
-    const isNo = ["yo'q", "no", "нет", "❌", "-", "xato", "qayta"].some((w) =>
+    const isNo = ["yo'q", "yoq", "no", "нет", "❌", "-", "xato", "qayta"].some((w) =>
       lower.includes(w),
     );
 
     if (isYes) {
       const products = state.pendingProducts ?? [];
 
+      // ── Product-only update (token already in DB) ──────────────────────
       if (state.flow === "update") {
-        // Product-only update (token already saved)
         await updateStoreProducts(chatId, products);
         clearState(chatId);
+
+        // Refresh the running bot's product cache by reading from DB next call
+        const store = await getStoreByOwnerChatId(chatId);
+        if (store?.botToken && store.botUsername) {
+          // Re-launch to pick up new products (bot-manager always reads fresh from DB per message)
+          launchStoreBot(store.botToken, store.storeName);
+        }
+
         await reply(
-          `✅ *${products.length}* ta mahsulot yangilandi!\n\n` +
+          `✅ *${products.length}* ta mahsulot muvaffaqiyatli yangilandi!\n\n` +
             "Mijozlar botiga o'zgarishlar darhol qo'llanildi.",
           { parse_mode: "Markdown" },
         );
         return;
       }
 
-      // Full setup — save store and launch its bot
-      const storeName = state.pendingStoreName ?? "Do'konim";
+      // ── Full initial setup — save to DB and launch bot ─────────────────
+      const storeName = state.pendingStoreName!;
       const botToken = state.pendingBotToken!;
-      const botUsername = state.pendingBotUsername ?? "";
+      const botUsername = state.pendingBotUsername!;
 
-      await upsertStore(chatId, { storeName, botToken, products });
+      await upsertStore(chatId, { storeName, botToken, botUsername, products });
       clearState(chatId);
 
-      // Launch the dedicated customer bot immediately
+      // Launch the dedicated customer bot immediately (fire-and-forget)
       launchStoreBot(botToken, storeName);
+
+      logger.info({ storeName, botUsername, productCount: products.length }, "[ADMIN-BOT] store saved and bot launched");
 
       await reply(
         `🎉 *Tabriklaymiz! Do'koningiz ishga tushdi!*\n\n` +
           `🏪 Do'kon: *${storeName}*\n` +
-          `🤖 Bot: *@${botUsername}*\n` +
+          `🤖 Mijozlar boti: @${botUsername}\n` +
           `📦 Mahsulotlar: *${products.length}* ta\n\n` +
-          `Mijozlar *@${botUsername}* ga yozsa, AI avtomatik savdo qiladi!\n\n` +
-          "📌 Buyruqlar:\n" +
-          "/update — mahsulotlarni yangilash\n" +
+          `Mijozlaringiz endi *@${botUsername}* ga yozsa, AI avtomatik ravishda savdo qiladi!\n\n` +
+          "━━━━━━━━━━━━━━━━━\n" +
+          "📌 Keyingi buyruqlar:\n" +
+          "/update — mahsulot katalogini yangilash\n" +
           "/mystores — do'kon ma'lumotlari",
         { parse_mode: "Markdown" },
       );
@@ -251,11 +292,8 @@ async function handleText(
     }
 
     if (isNo) {
-      // Go back to product input step
       setState(chatId, { ...state, stage: "AWAITING_PRODUCTS", pendingProducts: undefined });
-      await reply(
-        "🔄 Qaytadan yuboring. Mahsulotlar matnini nusxalab yuboring:",
-      );
+      await reply("🔄 Qaytadan yuboring. Mahsulotlar matnini nusxalab yuboring:");
       return;
     }
 
@@ -263,11 +301,13 @@ async function handleText(
     return;
   }
 
-  // ── IDLE — owner already set up ──────────────────────────────────────────
+  // ── IDLE — check if owner has a store ────────────────────────────────────
   const store = await getStoreByOwnerChatId(chatId);
   if (store) {
+    const botHandle = store.botUsername ? `@${store.botUsername}` : "Botingiz";
     await reply(
-      `Bu *admin panel*. Mijozlar *@${store.botToken ? (await fetch(`https://api.telegram.org/bot${store.botToken}/getMe`).then(r => r.json()).then((d: { result?: { username?: string } }) => d.result?.username ?? "botingiz").catch(() => "botingiz")) : "botingiz"}* ga yozishi kerak.\n\n` +
+      `Bu *admin panel* — faqat siz uchun.\n\n` +
+        `Mijozlar *${botHandle}* ga yozishi kerak.\n\n` +
         "📌 Mavjud buyruqlar:\n" +
         "/update — mahsulotlarni yangilash\n" +
         "/mystores — do'kon ma'lumotlari",
@@ -276,7 +316,7 @@ async function handleText(
     return;
   }
 
-  // Unknown user trying to chat — prompt them to onboard
+  // Unknown person — prompt to start
   await reply(
     "Bu bot *business owner*lar uchun admin panel.\n\n" +
       "Do'kon yaratish uchun /start yuboring.",
@@ -295,7 +335,7 @@ export function createTelegramBot(): Telegraf | null {
 
   const bot = new Telegraf(token);
 
-  // /start — entry point for owner onboarding
+  // /start
   bot.command("start", async (ctx) => {
     try {
       const chatId = String(ctx.from.id);
@@ -303,13 +343,15 @@ export function createTelegramBot(): Telegraf | null {
 
       if (existing) {
         clearState(chatId);
-        const products = (existing.products as Product[]).length;
+        const productCount = (existing.products as Product[]).length;
+        const botHandle = existing.botUsername ? `@${existing.botUsername}` : "_(token yo'q)_";
         await ctx.reply(
-          `👋 Xush kelibsiz! *${existing.storeName}* do'koningiz sozlangan.\n\n` +
-            `📦 Mahsulotlar: *${products}* ta\n` +
-            `🤖 Bot token: \`${existing.botToken?.slice(0, 15)}...\`\n\n` +
+          `👋 Qaytib kelganingiz yaxshi!\n\n` +
+            `🏪 Do'kon: *${existing.storeName}*\n` +
+            `🤖 Mijozlar boti: ${botHandle}\n` +
+            `📦 Mahsulotlar: *${productCount}* ta\n\n` +
             "📌 Buyruqlar:\n" +
-            "/update — mahsulotlarni yangilash\n" +
+            "/update — mahsulot katalogini yangilash\n" +
             "/mystores — to'liq ma'lumot",
           { parse_mode: "Markdown" },
         );
@@ -326,6 +368,7 @@ export function createTelegramBot(): Telegraf | null {
           "1️⃣ Do'kon nomi\n" +
           "2️⃣ Dedikatsiyalangan bot token (@BotFather orqali)\n" +
           "3️⃣ Mahsulotlar katalogi\n\n" +
+          "━━━━━━━━━━━━━━━━━\n" +
           "➡️ Boshlaylik! *Do'koningiz nomini* kiriting:",
         { parse_mode: "Markdown" },
       );
@@ -335,13 +378,13 @@ export function createTelegramBot(): Telegraf | null {
     }
   });
 
-  // /update — re-upload product catalog
+  // /update — re-upload product catalog only (token stays the same)
   bot.command("update", async (ctx) => {
     try {
       const chatId = String(ctx.from.id);
       const store = await getStoreByOwnerChatId(chatId);
       if (!store) {
-        await ctx.reply("Avval /start buyrug'ini yuboring.");
+        await ctx.reply("Avval /start buyrug'ini yuboring va do'kon sozlang.");
         return;
       }
       setState(chatId, {
@@ -349,6 +392,7 @@ export function createTelegramBot(): Telegraf | null {
         flow: "update",
         pendingStoreName: store.storeName,
         pendingBotToken: store.botToken ?? undefined,
+        pendingBotUsername: store.botUsername ?? undefined,
       });
       await ctx.reply(
         `🔄 *${store.storeName}* mahsulotlarini yangilaylik.\n\n` +
@@ -371,9 +415,10 @@ export function createTelegramBot(): Telegraf | null {
         return;
       }
       const products = store.products as Product[];
+      const botHandle = store.botUsername ? `@${store.botUsername}` : "_(sozlanmagan)_";
       await ctx.reply(
         `🏪 *${store.storeName}*\n` +
-          `🤖 Bot token: \`${store.botToken?.slice(0, 20)}...\`\n` +
+          `🤖 Mijozlar boti: ${botHandle}\n` +
           `📦 Mahsulotlar: *${products.length}* ta\n\n` +
           formatProductList(products),
         { parse_mode: "Markdown" },
@@ -384,7 +429,7 @@ export function createTelegramBot(): Telegraf | null {
     }
   });
 
-  // Text messages
+  // Free-text messages
   bot.on(message("text"), async (ctx) => {
     if (ctx.chat.type !== "private") return;
     const chatId = String(ctx.from.id);
@@ -440,7 +485,7 @@ export function launchBot(bot: Telegraf): void {
   };
 
   attempt(1);
-  logger.info("[ADMIN-BOT] launch initiated (long polling)");
+  logger.info("[ADMIN-BOT] Bot launch initiated (long polling, dropPendingUpdates=true)");
   process.once("SIGINT", () => bot.stop("SIGINT"));
   process.once("SIGTERM", () => bot.stop("SIGTERM"));
 }

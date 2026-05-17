@@ -32,7 +32,7 @@ export async function getAllStoresWithToken(): Promise<Store[]> {
 
 export async function upsertStore(
   ownerChatId: string,
-  data: { storeName: string; botToken: string; products: Product[] },
+  data: { storeName: string; botToken: string; botUsername: string; products: Product[] },
 ): Promise<Store> {
   const rows = await db
     .insert(storesTable)

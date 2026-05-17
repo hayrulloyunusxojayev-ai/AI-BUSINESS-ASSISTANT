@@ -12,6 +12,7 @@ export const storesTable = pgTable("stores", {
   ownerChatId: text("owner_chat_id").notNull().unique(),
   storeName: text("store_name").notNull(),
   botToken: text("bot_token").unique(),
+  botUsername: text("bot_username"),
   products: jsonb("products").$type<Product[]>().notNull().default([]),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
