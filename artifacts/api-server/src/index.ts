@@ -2,6 +2,7 @@ import app from "./app";
 import { logger } from "./lib/logger";
 import { ensureSchema } from "./lib/migrate";
 import { createTelegramBot, launchBot } from "./lib/telegram";
+import { startAllStoreBots } from "./lib/bot-manager";
 
 // Global safety nets — nothing can crash this process unintentionally
 process.on("uncaughtException", (err) => {
@@ -49,10 +50,16 @@ async function main() {
     });
   });
 
+  // Launch admin bot
   const bot = createTelegramBot();
   if (bot) {
     launchBot(bot);
   }
+
+  // Launch all persisted store bots (fire-and-forget, each isolated)
+  startAllStoreBots().catch((err) => {
+    logger.error({ err: String(err) }, "[BOT-MANAGER] startAllStoreBots failed");
+  });
 }
 
 main().catch((err) => {

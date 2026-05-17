@@ -1,0 +1,25 @@
+We need to shift the architecture to match the final SaaS vision. The main `@woxsom_ai_bot` should act STRICTLY as the Admin Panel / Constructor for business owners. Regular customers will NOT use this main bot. Instead, each store will run on its own dedicated Telegram Bot token.
+
+Please modify the code to implement this flow:
+
+1. Update Database Schema (`stores` table):
+   - Add a field `botToken` (string, unique) to store the dedicated bot token for each shop.
+
+2. Refine Owner Onboarding Flow in the Main Bot:
+   - When an owner sends `/start` to the main bot, guide them through this explicit setup:
+     Step 1: Ask for the Shop Name.
+     Step 2: Ask them to create a bot via @BotFather (enforcing that the username must end with or contain "_woxsom_bot" as a brand restriction) and send the Bot Token.
+     Step 3: Ask them to paste the raw product text/posts from their business channel or group.
+   - Run the AI Product Parser on the text, show the parsed JSON results, and ask for confirmation (Yes/No).
+   - Once confirmed, save the store profile (Name, Token, Products) to the database.
+
+3. Dynamic Multi-Bot Manager (The Core Feature):
+   - Create a manager module that reads all active stores from the database.
+   - For each store, dynamically initialize a separate Telegraf bot instance using its specific `botToken`.
+   - When an owner finishes onboarding or when the server restarts, automatically launch these client bots in long-polling mode (fire-and-forget, wrapping each in a try/catch so one bad token doesn't crash the server).
+
+4. Dedicated Customer Mode (Inside Client Bots):
+   - Inside these dynamic client bots, there is NO onboarding. Any message from a user is treated strictly as a Customer.
+   - The AI must fetch the specific product catalog for THAT bot's token from the database and act purely as an AI Sales Agent for that shop.
+
+Apply these changes, handle database migrations via Drizzle if needed, and restart the server. Let me know when the constructor is ready to accept its first bot token!
