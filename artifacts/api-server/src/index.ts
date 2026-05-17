@@ -3,6 +3,23 @@ import { logger } from "./lib/logger";
 import { ensureSchema } from "./lib/migrate";
 import { createTelegramBot, launchBot } from "./lib/telegram";
 
+// Global safety nets — nothing can crash this process unintentionally
+process.on("uncaughtException", (err) => {
+  console.error("[PROCESS] Uncaught exception (server stays alive):", err);
+  logger.error(
+    { err: err.message, stack: err.stack },
+    "Uncaught exception — server continues",
+  );
+});
+
+process.on("unhandledRejection", (reason) => {
+  console.error("[PROCESS] Unhandled promise rejection (server stays alive):", reason);
+  logger.error(
+    { reason: String(reason) },
+    "Unhandled rejection — server continues",
+  );
+});
+
 const rawPort = process.env["PORT"];
 
 if (!rawPort) {
