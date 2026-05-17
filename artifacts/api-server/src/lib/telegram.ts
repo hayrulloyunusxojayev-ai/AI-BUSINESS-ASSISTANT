@@ -382,6 +382,7 @@ export function createTelegramBot(): Telegraf | null {
   bot.command("update", async (ctx) => {
     try {
       const chatId = String(ctx.from.id);
+      clearState(chatId); // always reset before checking store
       const store = await getStoreByOwnerChatId(chatId);
       if (!store) {
         await ctx.reply("Avval /start buyrug'ini yuboring va do'kon sozlang.");
@@ -409,19 +410,21 @@ export function createTelegramBot(): Telegraf | null {
   bot.command("mystores", async (ctx) => {
     try {
       const chatId = String(ctx.from.id);
+      clearState(chatId); // reset any stale onboarding/update state
       const store = await getStoreByOwnerChatId(chatId);
       if (!store) {
-        await ctx.reply("Siz hali do'kon sozlamagansiz. /start buyrug'ini yuboring.");
+        await ctx.reply("Sizda hali do'kon yo'q. Yaratish uchun /start yuboring.");
         return;
       }
-      const products = store.products as Product[];
-      const botHandle = store.botUsername ? `@${store.botUsername}` : "_(sozlanmagan)_";
+      const products = (store.products ?? []) as Product[];
+      const botHandle = store.botUsername ? `@${store.botUsername}` : "(sozlanmagan)";
+      // Use plain text — store names / product data can contain Markdown special
+      // chars (*_`) that silently break parse_mode:"Markdown" and cause crashes.
       await ctx.reply(
-        `🏪 *${store.storeName}*\n` +
+        `🏪 Do'kon: ${store.storeName}\n` +
           `🤖 Mijozlar boti: ${botHandle}\n` +
-          `📦 Mahsulotlar: *${products.length}* ta\n\n` +
+          `📦 Mahsulotlar: ${products.length} ta\n\n` +
           formatProductList(products),
-        { parse_mode: "Markdown" },
       );
     } catch (err) {
       console.error("[ADMIN-BOT /mystores] error:", err);
@@ -429,12 +432,16 @@ export function createTelegramBot(): Telegraf | null {
     }
   });
 
-  // Free-text messages
+  // Free-text messages — commands are handled above; guard here prevents
+  // Telegraf's middleware chain from also routing /cmd messages into the
+  // state machine (both handlers fire for text messages in Telegraf v4).
   bot.on(message("text"), async (ctx) => {
     if (ctx.chat.type !== "private") return;
     const chatId = String(ctx.from.id);
     const text = ctx.message.text.trim();
     if (!text) return;
+    // Skip — let the dedicated bot.command() handlers deal with it
+    if (text.startsWith("/")) return;
 
     try {
       await handleText(
